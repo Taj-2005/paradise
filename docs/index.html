@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CN Phase 1 — Private Network Service Platform · Team paradise</title>
+<meta name="description" content="Build and verification guide for a four-machine private network: dnsmasq DNS, nginx TLS edge with load balancing, and two REST backends.">
+<style>
+:root{
+  --bg:#ffffff; --bg-2:#f6f8fb; --bg-3:#eef2f7;
+  --fg:#0f172a; --fg-2:#475569; --fg-3:#64748b;
+  --line:#dde3ec; --line-2:#c7d0dc;
+  --accent:#2563eb; --accent-fg:#ffffff;
+  --dns:#7c3aed; --edge:#2563eb; --ba:#0d9488; --bb:#ca8a04;
+  --ok:#0f766e; --warn:#b45309; --bad:#b91c1c;
+  --warn-bg:#fff7ed; --bad-bg:#fef2f2; --ok-bg:#f0fdfa;
+  --code-bg:#0f172a; --code-fg:#e2e8f0;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --radius:10px; --maxw:1180px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0b1220; --bg-2:#111a2b; --bg-3:#16233a;
+    --fg:#e6edf6; --fg-2:#a9b6c8; --fg-3:#8496ab;
+    --line:#233248; --line-2:#2e4159;
+    --accent:#5b9dff; --accent-fg:#06101f;
+    --dns:#a78bfa; --edge:#5b9dff; --ba:#2dd4bf; --bb:#eab308;
+    --ok:#2dd4bf; --warn:#fbbf24; --bad:#f87171;
+    --warn-bg:#2a1f0d; --bad-bg:#2a1414; --ok-bg:#0c2725;
+    --code-bg:#070d18; --code-fg:#dbe6f5;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:5rem}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 var(--sans);-webkit-text-size-adjust:100%}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 1.25rem}
+
+header.top{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topin{max-width:var(--maxw);margin:0 auto;padding:.7rem 1.25rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+.brand{font-weight:700;letter-spacing:-.01em;margin-right:auto;font-size:1rem}
+.brand span{color:var(--fg-3);font-weight:500}
+nav.top a{color:var(--fg-2);text-decoration:none;font-size:.85rem;padding:.3rem .55rem;border-radius:7px;white-space:nowrap}
+nav.top a:hover{background:var(--bg-3);color:var(--fg)}
+
+.hero{padding:2.75rem 0 1.5rem}
+h1{font-size:clamp(1.6rem,4.5vw,2.4rem);line-height:1.15;letter-spacing:-.025em;margin:0 0 .6rem}
+.sub{color:var(--fg-2);font-size:1.05rem;max-width:62ch;margin:0 0 1.25rem}
+.pills{display:flex;gap:.45rem;flex-wrap:wrap;margin-bottom:.5rem}
+.pill{font:600 .72rem/1 var(--mono);padding:.4rem .6rem;border-radius:999px;border:1px solid var(--line-2);color:var(--fg-2);background:var(--bg-2)}
+
+h2{font-size:1.5rem;letter-spacing:-.02em;margin:3rem 0 .4rem;padding-top:.5rem}
+h3{font-size:1.1rem;margin:1.75rem 0 .5rem;letter-spacing:-.01em}
+h4{font-size:.95rem;margin:1.25rem 0 .35rem}
+p{margin:.6rem 0}
+a{color:var(--accent)}
+hr{border:0;border-top:1px solid var(--line);margin:2.5rem 0}
+.lede{color:var(--fg-2);margin-bottom:1rem}
+
+.grid{display:grid;gap:1rem}
+@media(min-width:720px){.grid.c2{grid-template-columns:1fr 1fr}.grid.c4{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:520px) and (max-width:719px){.grid.c4{grid-template-columns:1fr 1fr}}
+
+.card{border:1px solid var(--line);border-radius:var(--radius);padding:1rem 1.1rem;background:var(--bg-2)}
+.card h4{margin-top:0}
+.card.dns{border-left:4px solid var(--dns)}
+.card.edge{border-left:4px solid var(--edge)}
+.card.ba{border-left:4px solid var(--ba)}
+.card.bb{border-left:4px solid var(--bb)}
+.card .role{font:600 .7rem/1 var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--fg-3)}
+.card .ip{font:.85rem/1.5 var(--mono);color:var(--fg-2)}
+
+.note,.warn,.bad,.good{border-radius:var(--radius);padding:.8rem 1rem;margin:1rem 0;border:1px solid;font-size:.94rem}
+.note{background:var(--bg-3);border-color:var(--line-2)}
+.warn{background:var(--warn-bg);border-color:var(--warn);color:var(--fg)}
+.bad{background:var(--bad-bg);border-color:var(--bad);color:var(--fg)}
+.good{background:var(--ok-bg);border-color:var(--ok);color:var(--fg)}
+.warn strong,.bad strong{color:var(--bad)}
+.good strong{color:var(--ok)}
+.note p:first-child,.warn p:first-child,.bad p:first-child,.good p:first-child{margin-top:0}
+.note p:last-child,.warn p:last-child,.bad p:last-child,.good p:last-child{margin-bottom:0}
+
+/* code */
+.codewrap{position:relative;margin:.75rem 0}
+pre{margin:0;background:var(--code-bg);color:var(--code-fg);padding:.9rem 3.2rem .9rem 1rem;
+  border-radius:var(--radius);overflow-x:auto;font:13px/1.65 var(--mono);border:1px solid var(--line)}
+pre code{font:inherit}
+code:not(pre code){background:var(--bg-3);padding:.13em .38em;border-radius:5px;
+  font:.88em var(--mono);border:1px solid var(--line);word-break:break-word}
+.cp{position:absolute;top:.5rem;right:.5rem;background:rgba(255,255,255,.09);color:#cbd5e1;
+  border:1px solid rgba(255,255,255,.18);border-radius:7px;padding:.25rem .55rem;
+  font:600 .72rem var(--sans);cursor:pointer;opacity:0;transition:opacity .15s}
+.codewrap:hover .cp,.cp:focus{opacity:1}
+.cp.done{background:var(--ok);color:#fff;border-color:var(--ok);opacity:1}
+.expect{border:1px dashed var(--line-2);border-top:0;border-radius:0 0 var(--radius) var(--radius);
+  background:var(--bg-2);padding:.6rem 1rem;font:12.5px/1.6 var(--mono);color:var(--fg-2);
+  margin:-.4rem 0 .75rem;white-space:pre-wrap;overflow-x:auto}
+.expect b{color:var(--fg);font-weight:600;font-family:var(--sans);font-size:.78rem;
+  display:block;margin-bottom:.25rem;text-transform:uppercase;letter-spacing:.05em}
+
+/* tabs */
+.tabs{display:flex;gap:.35rem;flex-wrap:wrap;margin:1.25rem 0 0;border-bottom:1px solid var(--line);padding-bottom:.6rem}
+.tab{background:var(--bg-2);border:1px solid var(--line);border-radius:8px;padding:.5rem .8rem;
+  font:600 .85rem var(--sans);color:var(--fg-2);cursor:pointer;white-space:nowrap}
+.tab:hover{color:var(--fg);border-color:var(--line-2)}
+.tab[aria-selected=true]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.panel{display:none;padding-top:1.25rem}
+.panel.on{display:block}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0}
+.steps>li{counter-increment:s;position:relative;padding-left:2.4rem;margin-bottom:1.6rem}
+.steps>li::before{content:counter(s);position:absolute;left:0;top:.05rem;width:1.7rem;height:1.7rem;
+  border-radius:50%;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;
+  font:700 .82rem var(--mono)}
+.steps>li>strong:first-child{display:block;margin-bottom:.3rem}
+
+/* tables */
+.tablewrap{overflow-x:auto;margin:1rem 0;border:1px solid var(--line);border-radius:var(--radius)}
+table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:520px}
+th,td{text-align:left;padding:.55rem .75rem;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{background:var(--bg-3);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--fg-2)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--bg-2)}
+td code{white-space:nowrap}
+
+/* checklist */
+.check{list-style:none;padding:0;margin:.75rem 0}
+.check li{border:1px solid var(--line);border-radius:8px;margin-bottom:.4rem;background:var(--bg-2)}
+.check label{display:flex;gap:.7rem;align-items:flex-start;padding:.65rem .85rem;cursor:pointer}
+.check input{margin-top:.28rem;width:1.05rem;height:1.05rem;accent-color:var(--ok);flex:none}
+.check .t{font-size:.92rem}
+.check .h{display:block;color:var(--fg-3);font-size:.8rem;margin-top:.15rem}
+.check li:has(input:checked){background:var(--ok-bg);border-color:var(--ok)}
+.check li:has(input:checked) .t{text-decoration:line-through;color:var(--fg-3)}
+.progress{display:flex;align-items:center;gap:.75rem;margin:.75rem 0}
+.bar{flex:1;height:7px;background:var(--bg-3);border-radius:999px;overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:var(--ok);width:0;transition:width .25s}
+.pct{font:600 .82rem var(--mono);color:var(--fg-2);min-width:4.2rem;text-align:right}
+.reset{background:none;border:1px solid var(--line-2);color:var(--fg-3);border-radius:7px;
+  padding:.25rem .5rem;font:.75rem var(--sans);cursor:pointer}
+.reset:hover{color:var(--fg);border-color:var(--fg-3)}
+
+/* accordion */
+details{border:1px solid var(--line);border-radius:var(--radius);margin-bottom:.5rem;background:var(--bg-2)}
+details[open]{background:var(--bg-2)}
+summary{padding:.7rem .95rem;cursor:pointer;font-weight:600;font-size:.93rem;list-style:none;display:flex;gap:.6rem;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸";color:var(--fg-3);transition:transform .15s;display:inline-block;flex:none}
+details[open] summary::before{transform:rotate(90deg)}
+details .body{padding:0 .95rem .95rem;border-top:1px solid var(--line);margin-top:.1rem;padding-top:.75rem}
+.sym{font:.78rem var(--mono);color:var(--fg-3);margin-left:auto;flex:none}
+
+figure{margin:1.5rem 0}
+/* Mermaid renders two variants; CSS picks the one matching the viewer's theme. */
+.dia{width:100%;height:auto;display:block;border:1px solid var(--line);
+  border-radius:var(--radius);background:var(--bg);padding:.5rem}
+.dia.dk{display:none}
+@media (prefers-color-scheme:dark){ .dia.lt{display:none} .dia.dk{display:block} }
+figcaption{color:var(--fg-3);font-size:.83rem;margin-top:.5rem;text-align:center}
+.mmdsrc{margin-top:.5rem}
+.mmdsrc summary{font-size:.8rem;font-weight:500;color:var(--fg-3);padding:.45rem .7rem}
+.mmdsrc summary:hover{color:var(--fg)}
+.mmdsrc .body{padding-top:.5rem}
+.mmdsrc pre{font-size:11.5px;max-height:26rem;overflow:auto}
+@media print{ .dia.dk{display:none!important} .dia.lt{display:block!important} .mmdsrc{display:none} }
+
+footer{margin-top:4rem;border-top:1px solid var(--line);padding:2rem 0 3rem;color:var(--fg-3);font-size:.88rem}
+.members{display:grid;gap:.4rem;margin:.75rem 0;font-family:var(--mono);font-size:.85rem}
+
+@media print{
+  header.top,nav.top,.cp,.reset,.tabs{display:none!important}
+  .panel{display:block!important;break-inside:avoid}
+  body{background:#fff;color:#000;font-size:11pt}
+  pre{background:#f4f4f4;color:#000;border:1px solid #bbb;white-space:pre-wrap}
+  a{color:#000;text-decoration:underline}
+  .card,.note,.warn,.bad,.good{break-inside:avoid}
+  h2{break-after:avoid}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="topin">
+    <div class="brand">CN Phase 1 <span>· team paradise</span></div>
+    <nav class="top">
+      <a href="#overview">Overview</a>
+      <a href="#setup">Setup</a>
+      <a href="#verify">Verify</a>
+      <a href="#layers">Layers</a>
+      <a href="#failures">Failures</a>
+      <a href="#trouble">Troubleshooting</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section class="hero">
+  <h1>Private Network Service Platform</h1>
+  <p class="sub">Four macOS laptops on one LAN. A private DNS zone, an nginx edge terminating
+  TLS and load balancing across two REST backends, and packet-level evidence of every layer
+  in a single request.</p>
+  <div class="pills">
+    <span class="pill">dnsmasq</span><span class="pill">nginx</span><span class="pill">TLS 1.3</span>
+    <span class="pill">round robin</span><span class="pill">Express</span><span class="pill">Wireshark</span>
+  </div>
+  <p class="sub" style="font-size:.92rem;margin-top:1rem">
+    <strong>The application stays simple — the network is the project.</strong>
+  </p>
+</section>
+
+<hr>
+
+<section id="overview">
+<h2>Overview</h2>
+<p class="lede">Each machine takes one network role. This is a topology, not a software architecture.</p>
+
+<div class="grid c4">
+  <div class="card dns"><div class="role">Mac 1</div><h4>Private DNS</h4>
+    <p class="ip">dnsmasq · 53 UDP/TCP</p>
+    <p style="font-size:.85rem;color:var(--fg-2);margin-bottom:0">Authoritative for <code>*.paradise.test</code>. Also a test client. <em>≈ Route 53 private zone</em></p></div>
+  <div class="card edge"><div class="role">Mac 2</div><h4>Edge</h4>
+    <p class="ip">nginx · 443 / 8443</p>
+    <p style="font-size:.85rem;color:var(--fg-2);margin-bottom:0">TLS termination, reverse proxy, round robin. <em>≈ ALB + ACM</em></p></div>
+  <div class="card ba"><div class="role">Mac 3</div><h4>Backend A</h4>
+    <p class="ip">Express · 0.0.0.0:3001</p>
+    <p style="font-size:.85rem;color:var(--fg-2);margin-bottom:0">Sets <code>X-Backend: A</code>. <em>≈ EC2 in a target group</em></p></div>
+  <div class="card bb"><div class="role">Mac 4</div><h4>Backend B</h4>
+    <p class="ip">Express · 0.0.0.0:3002</p>
+    <p style="font-size:.85rem;color:var(--fg-2);margin-bottom:0">Sets <code>X-Backend: B</code>. Also a test client.</p></div>
+</div>
+
+<!-- DIAGRAM:topology -->
+<figure>
+  <img class="dia lt" src="diagrams/topology-light.svg" alt="Network topology — Four machines, four roles, one LAN. Numbered arrows follow a single request.">
+  <img class="dia dk" src="diagrams/topology-dark.svg"  alt="Network topology — Four machines, four roles, one LAN. Numbered arrows follow a single request.">
+  <figcaption>Four machines, four roles, one LAN. Numbered arrows follow a single request.
+    &nbsp;·&nbsp; <a href="diagrams/src/topology.mmd">.mmd</a>
+  </figcaption>
+  <details class="mmdsrc">
+    <summary>Mermaid source — network topology</summary>
+    <div class="body">
+      <div class="codewrap"><pre><code>---
+title: CN Phase 1 — Network topology
+---
+flowchart TB
+
+  subgraph LAN[&quot;Private LAN &amp;mdash; one Wi-Fi / switch, single /24 broadcast domain&quot;]
+    direction TB
+
+    C[&quot;&lt;b&gt;Client&lt;/b&gt;&lt;br/&gt;curl / browser&lt;br/&gt;&lt;i&gt;runs on Mac 1 or Mac 4&lt;/i&gt;&quot;]
+
+    DNS[&quot;&lt;b&gt;Mac 1 &amp;middot; Private DNS&lt;/b&gt;&lt;br/&gt;dnsmasq &amp;middot; UDP/TCP 53&lt;br/&gt;authoritative for *.paradise.test&lt;br/&gt;&lt;i&gt;&amp;asymp; Route 53 private hosted zone&lt;/i&gt;&quot;]
+
+    EDGE[&quot;&lt;b&gt;Mac 2 &amp;middot; Edge&lt;/b&gt;&lt;br/&gt;nginx &amp;middot; TLS termination&lt;br/&gt;reverse proxy &amp;middot; round robin&lt;br/&gt;:443 &amp;nbsp;(or :8443)&lt;br/&gt;&lt;i&gt;&amp;asymp; AWS ALB + ACM certificate&lt;/i&gt;&quot;]
+
+    BA[&quot;&lt;b&gt;Mac 3 &amp;middot; Backend A&lt;/b&gt;&lt;br/&gt;Express &amp;middot; 0.0.0.0:3001&lt;br/&gt;X-Backend: A&lt;br/&gt;&lt;i&gt;&amp;asymp; EC2 in a target group&lt;/i&gt;&quot;]
+
+    BB[&quot;&lt;b&gt;Mac 4 &amp;middot; Backend B&lt;/b&gt;&lt;br/&gt;Express &amp;middot; 0.0.0.0:3002&lt;br/&gt;X-Backend: B&lt;br/&gt;&lt;i&gt;also acts as a test client&lt;/i&gt;&quot;]
+  end
+
+  C  -- &quot;&lt;b&gt;1 &amp;middot; DNS query&lt;/b&gt;&lt;br/&gt;A? app.paradise.test&lt;br/&gt;UDP/53&quot; --&gt; DNS
+  DNS -. &quot;answer: Mac 2&#x27;s IP&lt;br/&gt;TTL 0&quot; .-&gt; C
+
+  C  == &quot;&lt;b&gt;2 &amp;middot; TCP handshake, TLS, HTTP&lt;/b&gt;&lt;br/&gt;client:ephemeral &amp;rarr; :443&lt;br/&gt;&lt;b&gt;encrypted&lt;/b&gt;&quot; ==&gt; EDGE
+
+  EDGE -- &quot;&lt;b&gt;3 &amp;middot; proxy_pass&lt;/b&gt;&lt;br/&gt;plain HTTP/1.1&lt;br/&gt;separate TCP session&quot; --&gt; BA
+  EDGE -- &quot;round robin&quot; --&gt; BB
+
+  classDef dns   fill:#f3ecff,stroke:#7c3aed,stroke-width:2px,color:#1e1b2e
+  classDef edge  fill:#e8f0ff,stroke:#2563eb,stroke-width:2px,color:#0f172a
+  classDef ba    fill:#e6fbf7,stroke:#0d9488,stroke-width:2px,color:#0f2b28
+  classDef bb    fill:#fdf6e3,stroke:#ca8a04,stroke-width:2px,color:#2b2410
+  classDef cli   fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#0f172a
+
+  class DNS dns
+  class EDGE edge
+  class BA ba
+  class BB bb
+  class C cli
+
+  linkStyle 0 stroke:#7c3aed,stroke-width:2px
+  linkStyle 1 stroke:#7c3aed,stroke-width:2px,stroke-dasharray:5 4
+  linkStyle 2 stroke:#2563eb,stroke-width:3px
+  linkStyle 3 stroke:#0f766e,stroke-width:2px
+  linkStyle 4 stroke:#0f766e,stroke-width:2px</code></pre></div>
+    </div>
+  </details>
+</figure>
+<!-- /DIAGRAM:topology -->
+
+<!-- DIAGRAM:request-flow -->
+<figure>
+  <img class="dia lt" src="diagrams/request-flow-light.svg" alt="Request flow — One curl, layer by layer: DNS, TCP, TLS, HTTP, and the separate upstream leg.">
+  <img class="dia dk" src="diagrams/request-flow-dark.svg"  alt="Request flow — One curl, layer by layer: DNS, TCP, TLS, HTTP, and the separate upstream leg.">
+  <figcaption>One curl, layer by layer: DNS, TCP, TLS, HTTP, and the separate upstream leg.
+    &nbsp;·&nbsp; <a href="diagrams/src/request-flow.mmd">.mmd</a>
+  </figcaption>
+  <details class="mmdsrc">
+    <summary>Mermaid source — request flow</summary>
+    <div class="body">
+      <div class="codewrap"><pre><code>---
+title: CN Phase 1 — Request flow for one curl
+---
+sequenceDiagram
+  autonumber
+  participant C as Client&lt;br/&gt;Mac 1 / Mac 4
+  participant D as Private DNS&lt;br/&gt;Mac 1 · dnsmasq
+  participant E as Edge&lt;br/&gt;Mac 2 · nginx
+  participant B as Backend A / B&lt;br/&gt;Mac 3 / Mac 4
+
+  Note over C,B: curl https://app.paradise.test/api/status
+
+  rect rgba(124, 58, 237, 0.10)
+    Note over C,D: APPLICATION LAYER — DNS over UDP/53
+    C -&gt;&gt; D: Standard query A  app.paradise.test&lt;br/&gt;client:ephemeral → 53 (UDP)
+    D --&gt;&gt; C: Response: A → Mac 2&#x27;s IP, TTL 0
+    Note right of D: A directory lookup, not a connection.&lt;br/&gt;Nothing has contacted the edge yet.
+  end
+
+  rect rgba(8, 145, 178, 0.10)
+    Note over C,E: TRANSPORT LAYER — TCP three-way handshake
+    C -&gt;&gt; E: SYN            client:54821 → :443   Seq=0
+    E --&gt;&gt; C: SYN-ACK        :443 → client:54821   Seq=0 Ack=1
+    C -&gt;&gt; E: ACK            connection established
+    Note right of E: Filter: tcp.flags.syn==1&lt;br/&gt;Completes before any TLS byte is sent.
+  end
+
+  rect rgba(220, 38, 38, 0.10)
+    Note over C,E: SESSION / PRESENTATION — TLS handshake
+    C -&gt;&gt; E: ClientHello — versions, ciphers,&lt;br/&gt;SNI = app.paradise.test
+    E --&gt;&gt; C: ServerHello + Certificate&lt;br/&gt;SAN matches the domain, signed by our local CA
+    C -&gt;&gt; E: Key exchange (ECDHE) · ChangeCipherSpec · Finished
+    Note right of E: TLS TERMINATES HERE.&lt;br/&gt;Everything after this is Application Data.
+  end
+
+  rect rgba(37, 99, 235, 0.10)
+    Note over C,B: APPLICATION LAYER — HTTP
+    C -&gt;&gt; E: GET /api/status   Host: app.paradise.test&lt;br/&gt;(inside encrypted TLS records)
+
+    rect rgba(15, 118, 110, 0.14)
+      Note over E,B: Separate TCP session · plaintext · round robin
+      E -&gt;&gt; B: GET /api/status  HTTP/1.1&lt;br/&gt;X-Forwarded-For, X-Forwarded-Proto
+      B --&gt;&gt; E: 200 OK  X-Backend: A&lt;br/&gt;Cache-Control: max-age=60  ETag: ...
+    end
+
+    E --&gt;&gt; C: 200 OK  X-Backend: A  (re-encrypted)
+  end
+
+  Note over C,B: Within 60s the next request is served from cache — no traffic at all.&lt;br/&gt;After that, If-None-Match → 304 Not Modified: one round trip, no body.</code></pre></div>
+    </div>
+  </details>
+</figure>
+<!-- /DIAGRAM:request-flow -->
+
+<div class="note"><p><strong>Real IPs live in <code>.env</code> and nowhere else.</strong>
+Config files are templates rendered from it, so changing an address is a one-line
+edit plus <code>./scripts/render-configs.sh</code>. Run <code>./scripts/status.sh</code> on any
+machine to print the live inventory.</p></div>
+</section>
+
+<hr>
+
+<section id="setup">
+<h2>Setup</h2>
+<p class="lede">Order matters: backends first, then the edge, then DNS, then point the clients.
+Pick your machine below.</p>
+
+<div class="tabs" role="tablist">
+  <button class="tab" role="tab" aria-selected="true"  data-p="p0">Step 0 · All machines</button>
+  <button class="tab" role="tab" aria-selected="false" data-p="p3">Mac 3 · Backend A</button>
+  <button class="tab" role="tab" aria-selected="false" data-p="p4">Mac 4 · Backend B</button>
+  <button class="tab" role="tab" aria-selected="false" data-p="p2">Mac 2 · Edge</button>
+  <button class="tab" role="tab" aria-selected="false" data-p="p1">Mac 1 · DNS</button>
+  <button class="tab" role="tab" aria-selected="false" data-p="pc">Clients</button>
+</div>
+
+<div class="panel on" id="p0">
+  <ol class="steps">
+    <li><strong>Clone the repo on all four machines</strong>
+      <div class="codewrap"><pre><code>git clone &lt;your-repo-url&gt; cn-phase1-team7
+cd cn-phase1-team7</code></pre></div>
+    </li>
+    <li><strong>Find each machine's LAN address</strong>
+      <p>Run on every Mac and write the four values down.</p>
+      <div class="codewrap"><pre><code>ipconfig getifaddr en0</code></pre></div>
+      <div class="expect"><b>Expected</b>10.0.0.21</div>
+      <div class="note"><p>Nothing printed? Your LAN is not on <code>en0</code>. Find the real
+      interface with <code>route get default | awk '/interface:/{print $2}'</code> and set
+      <code>IFACE</code> in <code>.env</code>.</p></div>
+    </li>
+    <li><strong>Fill in <code>.env</code> once, then copy it to all four</strong>
+      <div class="codewrap"><pre><code>cp .env.example .env
+$EDITOR .env      # set DNS_IP, EDGE_IP, BACKEND_A_IP, BACKEND_B_IP
+./scripts/render-configs.sh</code></pre></div>
+      <div class="codewrap"><pre><code>scp .env user@&lt;mac2&gt;:~/cn-phase1-team7/.env
+scp .env user@&lt;mac3&gt;:~/cn-phase1-team7/.env
+scp .env user@&lt;mac4&gt;:~/cn-phase1-team7/.env</code></pre></div>
+    </li>
+    <li><strong>Install this machine's prerequisites</strong>
+      <p>Detects the role from this machine's IP and installs only what it needs.</p>
+      <div class="codewrap"><pre><code>./scripts/bootstrap.sh</code></pre></div>
+    </li>
+  </ol>
+  <div class="good"><p><strong>Want to test everything on one laptop first?</strong>
+  <code>make smoke</code> runs the whole stack — two backends, nginx, a real
+  certificate, round robin, the 304, and the failure demo — on a single machine
+  with no LAN and no sudo. Fifteen checks in about ten seconds. Do this before
+  you get four laptops on a desk.</p></div>
+</div>
+
+<div class="panel" id="p3">
+  <p class="lede">Start the backends first so nginx has somewhere to send traffic.</p>
+  <ol class="steps">
+    <li><strong>Start Backend A</strong>
+      <div class="codewrap"><pre><code>make backend-a</code></pre></div>
+      <div class="expect"><b>Expected</b>  CN Phase 1 — Backend A
+  listening   http://0.0.0.0:3001
+  cache       Cache-Control: public, max-age=60
+  endpoints   GET /            GET /api/status
+              GET /healthz     GET /api/time</div>
+      <p>Leave it running in the foreground — the access log it prints is worth
+      having on screen during the demo.</p>
+    </li>
+    <li><strong>Confirm it is NOT bound to loopback</strong>
+      <div class="codewrap"><pre><code>lsof -nP -iTCP:3001 -sTCP:LISTEN</code></pre></div>
+      <div class="expect"><b>Want</b>node  12345  you  14u  IPv4  TCP *:3001 (LISTEN)</div>
+      <div class="bad"><p><strong>If you see <code>TCP 127.0.0.1:3001</code>, stop.</strong>
+      nginx on Mac 2 cannot reach a loopback-bound backend and every proxied request
+      will return 502 — while <code>curl localhost:3001</code> looks perfectly healthy.
+      This is the most common failure in the whole project. The service is written to
+      refuse to start on loopback, so if you see this you have started it by hand with
+      the wrong <code>HOST</code>.</p></div>
+    </li>
+  </ol>
+</div>
+
+<div class="panel" id="p4">
+  <ol class="steps">
+    <li><strong>Start Backend B</strong>
+      <div class="codewrap"><pre><code>make backend-b</code></pre></div>
+      <div class="expect"><b>Expected</b>  CN Phase 1 — Backend B
+  listening   http://0.0.0.0:3002</div>
+    </li>
+    <li><strong>Confirm the bind address</strong>
+      <div class="codewrap"><pre><code>lsof -nP -iTCP:3002 -sTCP:LISTEN</code></pre></div>
+      <div class="expect"><b>Want</b>TCP *:3002 (LISTEN)   — not 127.0.0.1:3002</div>
+    </li>
+  </ol>
+  <div class="note"><p>Mac 4 is also a test client, so it needs
+  <a href="#" data-goto="pc">the client steps</a> too.</p></div>
+</div>
+
+<div class="panel" id="p2">
+  <ol class="steps">
+    <li><strong>Generate certificates, install the config, start nginx</strong>
+      <p>One command does all of it, validating before it restarts anything.</p>
+      <div class="codewrap"><pre><code>make edge</code></pre></div>
+      <div class="expect"><b>Expected</b>✓ Certificate issued by the mkcert local CA
+✓ SAN covers app.paradise.test
+✓ Key and certificate match
+✓ Configuration valid
+✓ nginx listening on :443
+✓ End-to-end 200 through the proxy (TLS verified, no -k)</div>
+    </li>
+    <li><strong>Distribute the root CA to the other three Macs</strong>
+      <p>This is what keeps the whole team off <code>-k</code>.</p>
+      <div class="codewrap"><pre><code>scp infra/mac2-edge/certs/rootCA.pem user@&lt;mac1&gt;:~/
+scp infra/mac2-edge/certs/rootCA.pem user@&lt;mac3&gt;:~/
+scp infra/mac2-edge/certs/rootCA.pem user@&lt;mac4&gt;:~/</code></pre></div>
+      <div class="warn"><p><strong>Regenerating the certificate creates a new CA.</strong>
+      If you re-run <code>gen-certs.sh</code> later, every machine must be re-trusted.
+      Doing this on demo morning and forgetting to redistribute is a classic way to
+      end up reaching for <code>-k</code>.</p></div>
+    </li>
+    <li><strong>Watch requests arrive (useful during the video)</strong>
+      <div class="codewrap"><pre><code>tail -f /opt/homebrew/var/log/nginx/paradise-access.log</code></pre></div>
+      <div class="expect"><b>Shows</b>10.0.0.21 - [30/Sep/2026:14:02:11] "GET /api/status HTTP/2.0" 200 127
+  upstream=10.0.0.12:3001 backend=A tls=TLSv1.3/TLS_AES_128_GCM_SHA256 rt=0.004</div>
+    </li>
+  </ol>
+  <div class="note"><p><strong>Cannot bind port 443?</strong> Set
+  <code>HTTPS_PORT=8443</code> and <code>HTTP_PORT=8080</code> in <code>.env</code>,
+  re-render, and re-run. The spec allows this with <strong>no marks deducted</strong>.
+  Just be consistent — every URL in your evidence must then carry <code>:8443</code>.</p></div>
+</div>
+
+<div class="panel" id="p1">
+  <ol class="steps">
+    <li><strong>Install and start dnsmasq</strong>
+      <div class="codewrap"><pre><code>make dns</code></pre></div>
+      <div class="expect"><b>Expected</b>✓ Config syntax OK
+✓ listen-address is not loopback
+✓ app.paradise.test -> 10.0.0.11 (via 127.0.0.1)
+✓ api.paradise.test -> 10.0.0.11 (via 10.0.0.10 — reachable from the LAN)</div>
+      <div class="bad"><p><strong>The one line that decides whether this works:</strong>
+      <code>listen-address=0.0.0.0</code>. dnsmasq defaults to <code>127.0.0.1</code>,
+      which works perfectly when tested on Mac 1 and is completely invisible to every
+      other machine. <code>install.sh</code> hard-fails if it finds loopback here.</p></div>
+    </li>
+    <li><strong>Verify</strong>
+      <div class="codewrap"><pre><code>./infra/mac1-dns/verify.sh</code></pre></div>
+    </li>
+    <li><strong>Watch queries arrive live (excellent on camera)</strong>
+      <p>Leave this running and <code>dig</code> from Mac 3 — the query appears the
+      instant it is made, proving resolution reached <em>this</em> server and not
+      the router.</p>
+      <div class="codewrap"><pre><code>sudo tail -f /opt/homebrew/var/log/dnsmasq.log</code></pre></div>
+      <div class="expect"><b>Shows</b>query[A] app.paradise.test from 10.0.0.12
+config app.paradise.test is 10.0.0.11</div>
+    </li>
+  </ol>
+</div>
+
+<div class="panel" id="pc">
+  <p class="lede">Run these on <strong>all four</strong> Macs, including Mac 1 and Mac 2.</p>
+  <ol class="steps">
+    <li><strong>Point this machine's resolver at Mac 1</strong>
+      <div class="codewrap"><pre><code>make client-dns</code></pre></div>
+      <div class="expect"><b>Expected</b>✓ app.paradise.test -> 10.0.0.11   (resolved through Mac 1)
+→ dig reports SERVER: 10.0.0.10
+✓ Queries are going to Mac 1</div>
+      <p>The <code>SERVER:</code> line is exactly what the evaluator checks in form
+      field A3 — it must be Mac 1, not your router and not 8.8.8.8.</p>
+    </li>
+    <li><strong>Trust the team root CA</strong>
+      <div class="codewrap"><pre><code>make client-trust</code></pre></div>
+      <div class="expect"><b>Expected</b>✓ Added.
+✓ Certificate verified with no -k flag. You are ready for evaluation.</div>
+      <div class="bad"><p><strong>Do not continue until this passes.</strong>
+      <code>-k</code> anywhere in your submitted evidence scores <strong>zero</strong>
+      for the entire HTTPS section. Fix trust here, not during the recording.</p></div>
+    </li>
+  </ol>
+</div>
+</section>
+
+<hr>
+
+<section id="verify">
+<h2>Verify</h2>
+<p class="lede">Run from a <strong>client</strong> machine — Mac 1, 3 or 4. Never Mac 2:
+form field A3 requires client-side proof.</p>
+
+<div class="codewrap"><pre><code>make preflight     # ping matrix + port reachability
+make verify        # the full Phase 1 acceptance test</code></pre></div>
+
+<h3>Checklist</h3>
+<p class="lede">Ticks are saved in this browser. Everything here is asserted by
+<code>make verify</code>.</p>
+<div class="progress"><div class="bar"><i id="bar"></i></div><span class="pct" id="pct">0 / 0</span>
+  <button class="reset" id="reset">reset</button></div>
+<ul class="check" id="checklist">
+  <li><label><input type="checkbox" data-k="c1"><span class="t">All four Macs ping each other, 0% loss
+    <span class="h">make preflight — on every machine covers all six pairs</span></span></label></li>
+  <li><label><input type="checkbox" data-k="c2"><span class="t">Backends bound to <code>0.0.0.0</code>, not loopback
+    <span class="h">lsof -nP -iTCP:3001 -sTCP:LISTEN → want TCP *:3001</span></span></label></li>
+  <li><label><input type="checkbox" data-k="c3"><span class="t"><code>dig</code> from a client resolves to the edge
+    <span class="h">ANSWER = edge IP, SERVER = Mac 1</span></span></label></li>
+  <li><label><input type="checkbox" data-k="c4"><span class="t"><code>dig @8.8.8.8</code> returns NXDOMAIN
+    <span class="h">proves the name is genuinely private</span></span></label></li>
+  <li><label><input type="checkbox" data-k="c5"><span class="t"><code>curl -v</code> over HTTPS with <strong>no <code>-k</code></strong> → 200
+    <span class="h">SSL certificate verify ok · cert SAN matches the domain</span></span></label></li>
+  <li><label><input type="checkbox" data-k="c6"><span class="t">Six requests show both <code>X-Backend: A</code> and <code>B</code>
+    <span class="h">./scripts/lb-check.sh</span></span></label></li>
+  <li><label><input type="checkbox" data-k="c7"><span class="t"><code>Cache-Control</code>, <code>ETag</code>, <code>Date</code>, <code>X-Backend</code> all present
+    <span class="h">curl -sI .../api/status</span></span></label></li>
+  <li><label><input type="checkbox" data-k="c8"><span class="t">Conditional request returns <code>304</code>
+    <span class="h">against /api/cacheable — see the note below</span></span></label></li>
+  <li><label><input type="checkbox" data-k="c9"><span class="t">Killing Backend A shifts all traffic to B, zero 502s
+    <span class="h">make demo-fail → option A</span></span></label></li>
+  <li><label><input type="checkbox" data-k="c10"><span class="t">Restarting Backend A resumes round robin
+    <span class="h">within fail_timeout, 10s</span></span></label></li>
+  <li><label><input type="checkbox" data-k="c11"><span class="t">Packet captures open cleanly for dns / tcp / tls
+    <span class="h">./scripts/capture.sh full</span></span></label></li>
+  <li><label><input type="checkbox" data-k="c12"><span class="t">No private keys or <code>.env</code> in git
+    <span class="h">git status --ignored | grep -E '\.key|\.env'</span></span></label></li>
+</ul>
+
+<div class="warn"><p><strong>Why the 304 demo uses <code>/api/cacheable</code>.</strong>
+<code>/api/status</code> must identify which backend answered, so A and B return
+different bodies — and therefore compute <strong>different ETags for the same
+resource</strong>. Behind round robin, a conditional request frequently lands on the
+other replica, which does not recognise your validator and sends a full 200. You
+would see 304 only about half the time. <code>/api/cacheable</code> returns a
+byte-identical body on both machines, so revalidation is deterministic.</p>
+<p style="margin-bottom:0">This is a real constraint, not a workaround:
+<strong>cache validators must agree across replicas or conditional requests silently
+degrade into full responses.</strong> It is a good thing to raise unprompted in the viva.</p></div>
+</section>
+
+<hr>
+
+<section id="layers">
+<h2>Layer mapping</h2>
+<p class="lede">Every protocol in this project, placed in both models, with the
+command that makes it observable.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>OSI</th><th>TCP/IP</th><th>Protocol here</th><th>Port</th><th>Observe with</th><th>AWS equivalent</th></tr></thead>
+<tbody>
+<tr><td>7 Application</td><td>Application</td><td>DNS</td><td>53 UDP</td><td><code>dig</code> · filter <code>dns</code></td><td>Route 53</td></tr>
+<tr><td>7 Application</td><td>Application</td><td>HTTP/1.1, HTTP/2</td><td>443</td><td><code>curl -v</code></td><td>ALB listener rules</td></tr>
+<tr><td>6 Presentation</td><td>Application</td><td>TLS record layer</td><td>—</td><td>filter <code>tls</code></td><td>ACM</td></tr>
+<tr><td>5 Session</td><td>Application</td><td>TLS handshake</td><td>—</td><td>ClientHello … Finished</td><td>ACM + ALB</td></tr>
+<tr><td>4 Transport</td><td>Transport</td><td>TCP / UDP</td><td>443 / 53</td><td><code>tcp.flags.syn==1</code></td><td>ALB (L7) vs NLB (L4)</td></tr>
+<tr><td>3 Network</td><td>Internet</td><td>IPv4</td><td>—</td><td><code>ping</code></td><td>VPC / subnets</td></tr>
+<tr><td>2 Data Link</td><td>Link</td><td>Ethernet / 802.11</td><td>—</td><td><code>ifconfig en0</code></td><td>abstracted away</td></tr>
+<tr><td>1 Physical</td><td>Link</td><td>Wi-Fi radio</td><td>—</td><td>signal strength</td><td>abstracted away</td></tr>
+</tbody></table></div>
+<p><strong>TLS is the awkward one.</strong> OSI splits it — session establishment at 5,
+encryption at 6. TCP/IP has no such split and folds it into "application". The complete
+answer is: <em>TLS sits above TCP and below HTTP; OSI splits it across 5 and 6, TCP/IP
+folds it into the application layer.</em></p>
+
+<h3>Two connections, not one</h3>
+<div class="tablewrap"><table>
+<thead><tr><th></th><th>client → edge</th><th>edge → backend</th></tr></thead>
+<tbody>
+<tr><td>Protocol</td><td>HTTPS, TLS 1.2/1.3</td><td>plain HTTP/1.1</td></tr>
+<tr><td>Destination port</td><td>443 / 8443</td><td>3001 / 3002</td></tr>
+<tr><td>Source port</td><td>client ephemeral</td><td>nginx ephemeral</td></tr>
+<tr><td>Readable in Wireshark</td><td><strong>no</strong> — encrypted</td><td><strong>yes</strong> — plaintext</td></tr>
+<tr><td>Lifetime</td><td>per client request</td><td>pooled, <code>keepalive 16</code></td></tr>
+</tbody></table></div>
+<p>Independent TCP sessions with independent handshakes. The client's TLS session
+terminates at nginx — which is exactly what "TLS termination" means, and why a capture
+shows opaque bytes on one leg and readable HTTP on the other.</p>
+</section>
+
+<hr>
+
+<section id="failures">
+<h2>Failure demonstrations</h2>
+<p class="lede">Spec §6.3. Each one breaks a different layer, and telling them apart is
+the diagnostic skill being assessed.</p>
+<div class="codewrap"><pre><code>make demo-fail</code></pre></div>
+<p>Each option captures before state, performs the break, captures after state, names
+the affected layer, and restores — all four of which are marked.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Option</th><th>Break</th><th>Observation</th><th>Layer</th></tr></thead>
+<tbody>
+<tr><td><strong>A</strong> <em>use this for the video</em></td><td>Stop Backend A</td><td>All responses become <code>X-Backend: B</code>, no 502s</td><td>application</td></tr>
+<tr><td><strong>B</strong></td><td>Client resolver → 8.8.8.8</td><td><code>dig</code> NXDOMAIN, but <code>ping</code> to the IP still works</td><td>application (DNS)</td></tr>
+<tr><td><strong>C</strong></td><td>Request port 9999</td><td>Connection refused; host reachable, no listener</td><td>transport (TCP)</td></tr>
+<tr><td><strong>D</strong></td><td>Stop both backends</td><td>TLS still completes, nginx returns <strong>502</strong></td><td>application (upstream)</td></tr>
+</tbody></table></div>
+<div class="good"><p><strong>Option A is the one to record.</strong> It is visual, takes
+under a minute, and recovers cleanly on camera — nginx marks the dead upstream down after
+a single failed connection (<code>max_fails=1</code>) and <code>proxy_next_upstream</code>
+retries the survivor within the same client request, so the client never sees an error.</p></div>
+</section>
+
+<hr>
+
+<section id="trouble">
+<h2>Troubleshooting</h2>
+<p class="lede">Diagnose <strong>top down</strong>. The first step that fails names the
+layer, and everything below it is proven fine. This sequence is also the answer to the
+Phase 2 faculty-injected fault — say it aloud as you do it.</p>
+<div class="codewrap"><pre><code>ping -c3 &lt;edge-ip&gt;                       # 1 · network — reachable?
+dig app.paradise.test                     # 2 · DNS — resolves, and who answered?
+nc -vz app.paradise.test 443              # 3 · transport — anything listening?
+curl -v https://app.paradise.test/api/status   # 4 · TLS — handshake and trust
+curl -i https://app.paradise.test/api/status   # 5 · HTTP — what did it say?</code></pre></div>
+<p><code>./scripts/status.sh</code> runs all five and prints a verdict.</p>
+
+<details><summary>502 Bad Gateway on every request <span class="sym">application</span></summary>
+<div class="body">
+<p>nginx is healthy; it cannot reach an upstream. Test <strong>from Mac 2</strong>, not
+from the backend itself:</p>
+<div class="codewrap"><pre><code>curl -v http://&lt;backend-ip&gt;:3001/healthz</code></pre></div>
+<ul>
+<li><strong>Connection refused</strong> → backend not running, or bound to
+<code>127.0.0.1</code>. On the backend: <code>lsof -nP -iTCP:3001 -sTCP:LISTEN</code>.
+Want <code>TCP *:3001</code>, not <code>TCP 127.0.0.1:3001</code>.</li>
+<li><strong>Timeout</strong> → macOS firewall on the backend. Allow <code>node</code>.</li>
+<li><strong>Works from Mac 2 but still 502 through the proxy</strong> → wrong IP in the
+upstream block. Fix <code>.env</code> and <code>make render</code>.</li>
+</ul>
+</div></details>
+
+<details><summary>curl: (60) certificate not trusted <span class="sym">session</span></summary>
+<div class="body">
+<p>Fix the trust — never add <code>-k</code>.</p>
+<div class="codewrap"><pre><code>make client-trust
+curl -v https://app.paradise.test/api/status 2>&amp;1 | grep -i 'verify\|subject\|issuer'</code></pre></div>
+<div class="expect"><b>Want</b>* SSL certificate verify ok.</div>
+<p>Still failing? The certificate nginx serves was not signed by the CA this machine
+trusts. Regenerating the cert creates a <strong>new CA</strong> — redistribute
+<code>rootCA.pem</code> and re-trust everywhere.</p>
+</div></details>
+
+<details><summary>curl: (60) no alternative certificate subject name matches <span class="sym">session</span></summary>
+<div class="body">
+<p>The certificate has a Common Name but no Subject Alternative Name. Modern clients
+ignore CN entirely (RFC 6125). Regenerate — <code>gen-certs.sh</code> refuses to finish
+without a SAN covering the app domain.</p>
+<div class="codewrap"><pre><code>FORCE=1 ./infra/mac2-edge/scripts/gen-certs.sh
+make client-trust      # on every Mac — this is a new CA</code></pre></div>
+</div></details>
+
+<details><summary>dig times out from a client but works on Mac 1 <span class="sym">application · DNS</span></summary>
+<div class="body">
+<p>dnsmasq is bound to loopback. Check the rendered config:</p>
+<div class="codewrap"><pre><code>grep -E 'listen-address|interface' infra/mac1-dns/dnsmasq.conf</code></pre></div>
+<div class="expect"><b>Want</b>listen-address=0.0.0.0
+interface=en0</div>
+<p>Then <code>make dns</code> to reinstall and restart.</p>
+</div></details>
+
+<details><summary>Client lost internet access after make client-dns <span class="sym">application · DNS</span></summary>
+<div class="body">
+<p>dnsmasq is answering for <code>.test</code> but not forwarding anything else. Confirm
+<code>no-resolv</code> and <code>server=1.1.1.1</code> are present, then restart. Emergency
+rollback on the client:</p>
+<div class="codewrap"><pre><code>./infra/client/reset-dns.sh</code></pre></div>
+</div></details>
+
+<details><summary>X-Backend never changes <span class="sym">application</span></summary>
+<div class="body">
+<p>One backend is down, or nginx has marked it down. Check both:</p>
+<div class="codewrap"><pre><code>./scripts/status.sh
+curl -s http://&lt;backend-a-ip&gt;:3001/healthz
+curl -s http://&lt;backend-b-ip&gt;:3002/healthz</code></pre></div>
+<p>After restarting a backend, wait out <code>fail_timeout</code> (10s) before retesting.</p>
+</div></details>
+
+<details><summary>304 sometimes, 200 other times <span class="sym">application</span></summary>
+<div class="body">
+<p>You are testing <code>/api/status</code>, whose body — and therefore ETag — differs
+per backend. Use <code>/api/cacheable</code>:</p>
+<div class="codewrap"><pre><code>ETAG=$(curl -sI https://app.paradise.test/api/cacheable \
+  | awk -F': ' 'tolower($1)=="etag"{print $2}' | tr -d '\r')
+curl -sI -H "If-None-Match: $ETAG" https://app.paradise.test/api/cacheable</code></pre></div>
+<div class="expect"><b>Want</b>HTTP/2 304</div>
+</div></details>
+
+<details><summary>nginx will not bind to port 443 <span class="sym">transport</span></summary>
+<div class="body">
+<p>Ports below 1024 need root. Either run nginx with <code>sudo</code>, or switch to the
+unprivileged pair — the spec allows it with no marks deducted:</p>
+<div class="codewrap"><pre><code>sed -i '' 's/^HTTP_PORT=.*/HTTP_PORT=8080/;s/^HTTPS_PORT=.*/HTTPS_PORT=8443/' .env
+make render && make edge</code></pre></div>
+<p>Every URL in your evidence must then include <code>:8443</code>.</p>
+</div></details>
+
+<details><summary>EADDRINUSE starting a backend <span class="sym">transport</span></summary>
+<div class="body">
+<div class="codewrap"><pre><code>lsof -nP -iTCP:3001 -sTCP:LISTEN
+kill &lt;pid&gt;</code></pre></div>
+</div></details>
+
+<h3>Things that look broken but are not</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>Observation</th><th>Why it is correct</th></tr></thead>
+<tbody>
+<tr><td>Header names lowercase — <code>etag:</code>, <code>x-backend:</code></td><td>HTTP/2 requires it. Use <code>curl --http1.1</code> for classic casing.</td></tr>
+<tr><td>Wireshark shows only "Application Data"</td><td>TLS is working. That is the whole point — and explaining it earns the C3 marks.</td></tr>
+<tr><td><code>dig @8.8.8.8</code> returns NXDOMAIN</td><td>Required. It proves the name is private (form A4).</td></tr>
+<tr><td><code>curl https://&lt;ip&gt;/</code> gives an empty reply</td><td><code>default_server</code> returns 444 on purpose — enforcing "by name, never by IP".</td></tr>
+<tr><td>Alternation is not perfectly even</td><td>Keepalive pooling skews short bursts. Both appearing in six requests is what matters.</td></tr>
+<tr><td>First request slower than the rest</td><td>Full TLS handshake; later ones resume the session.</td></tr>
+</tbody></table></div>
+</section>
+
+<hr>
+
+<section id="reference">
+<h2>Command reference</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Command</th><th>Machine</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>make bootstrap</code></td><td>any</td><td>First-run setup; detects this machine's role</td></tr>
+<tr><td><code>make smoke</code></td><td>one</td><td>Whole stack on a single laptop — 15 checks, no LAN needed</td></tr>
+<tr><td><code>make render</code></td><td>any</td><td>Regenerate configs from <code>.env</code></td></tr>
+<tr><td><code>make dns</code></td><td>Mac 1</td><td>Install + start dnsmasq</td></tr>
+<tr><td><code>make edge</code></td><td>Mac 2</td><td>Certs, nginx config, validate, start</td></tr>
+<tr><td><code>make backend-a</code> / <code>-b</code></td><td>Mac 3 / 4</td><td>Start a backend in the foreground</td></tr>
+<tr><td><code>make client-dns</code></td><td>all</td><td>Point the resolver at Mac 1</td></tr>
+<tr><td><code>make client-trust</code></td><td>all</td><td>Install the root CA</td></tr>
+<tr><td><code>make preflight</code></td><td>any</td><td>Ping matrix + port reachability</td></tr>
+<tr><td><code>make verify</code></td><td>client</td><td>Full Phase 1 acceptance test</td></tr>
+<tr><td><code>make lb</code></td><td>client</td><td>Six requests, assert both backends answer</td></tr>
+<tr><td><code>make evidence</code></td><td>client</td><td>Write form answers into <code>evidence/</code></td></tr>
+<tr><td><code>make capture</code></td><td>any</td><td>tcpdump helper for Wireshark</td></tr>
+<tr><td><code>make demo-fail</code></td><td>any</td><td>Failure demonstration menu</td></tr>
+<tr><td><code>make restore</code></td><td>any</td><td>Return this machine to known-good</td></tr>
+<tr><td><code>make status</code></td><td>any</td><td>What is running here, and can it see the others</td></tr>
+</tbody></table></div>
+</section>
+
+<footer>
+  <div class="wrap" style="padding:0">
+    <h3 style="margin-top:0">Team paradise</h3>
+    <div class="members" id="members">
+      <div>&lt;enrolment&gt; Tajuddin Shaik — Mac 1 · DNS, repo tooling</div>
+      <div>&lt;enrolment&gt; Anushka — Mac 2 · Edge, TLS, load balancing</div>
+      <div>&lt;enrolment&gt; Nipun — Mac 3 · Backend A, caching</div>
+      <div>&lt;enrolment&gt; Omkar Hadole — Mac 4 · Backend B, verification, Wireshark</div>
+    </div>
+    <p>Computer Networks (CSA223) · Phase 1 — Build &amp; Observe<br>
+    Every member can explain any part of this system, not only the part they configured.</p>
+    <p style="margin-bottom:0">
+      <a href="../README.md">README</a> ·
+      <a href="architecture.md">Architecture</a> ·
+      <a href="runbook.md">Runbook</a> ·
+      <a href="troubleshooting.md">Troubleshooting</a> ·
+      <a href="viva-prep.md">Viva prep</a>
+    </p>
+  </div>
+</footer>
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ── copy buttons ─────────────────────────────────────────────────── */
+  document.querySelectorAll(".codewrap").forEach(function(w){
+    var pre = w.querySelector("pre"); if(!pre) return;
+    var b = document.createElement("button");
+    b.className = "cp"; b.type = "button"; b.textContent = "copy";
+    b.setAttribute("aria-label","Copy command to clipboard");
+    b.addEventListener("click", function(){
+      var text = pre.innerText;
+      var done = function(){
+        b.textContent = "copied"; b.classList.add("done");
+        setTimeout(function(){ b.textContent="copy"; b.classList.remove("done"); }, 1400);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } else { fallback(); }
+      function fallback(){
+        var t = document.createElement("textarea");
+        t.value = text; t.style.position="fixed"; t.style.opacity="0";
+        document.body.appendChild(t); t.select();
+        try { document.execCommand("copy"); done(); } catch(e){ b.textContent="failed"; }
+        document.body.removeChild(t);
+      }
+    });
+    w.appendChild(b);
+  });
+
+  /* ── role tabs ────────────────────────────────────────────────────── */
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+  function show(id){
+    tabs.forEach(function(t){ t.setAttribute("aria-selected", String(t.dataset.p === id)); });
+    document.querySelectorAll(".panel").forEach(function(p){ p.classList.toggle("on", p.id === id); });
+    try { localStorage.setItem("cn1.tab", id); } catch(e){}
+  }
+  tabs.forEach(function(t){ t.addEventListener("click", function(){ show(t.dataset.p); }); });
+  document.querySelectorAll("[data-goto]").forEach(function(a){
+    a.addEventListener("click", function(e){ e.preventDefault(); show(a.dataset.goto); });
+  });
+  try { var saved = localStorage.getItem("cn1.tab");
+        if (saved && document.getElementById(saved)) show(saved); } catch(e){}
+
+  /* ── checklist with persistence ───────────────────────────────────── */
+  var boxes = Array.prototype.slice.call(document.querySelectorAll("#checklist input"));
+  var bar = document.getElementById("bar"), pct = document.getElementById("pct");
+  function paint(){
+    var n = boxes.filter(function(b){ return b.checked; }).length;
+    if (bar) bar.style.width = boxes.length ? (100*n/boxes.length) + "%" : "0";
+    if (pct) pct.textContent = n + " / " + boxes.length;
+  }
+  boxes.forEach(function(b){
+    var k = "cn1.chk." + b.dataset.k;
+    try { b.checked = localStorage.getItem(k) === "1"; } catch(e){}
+    b.addEventListener("change", function(){
+      try { localStorage.setItem(k, b.checked ? "1" : "0"); } catch(e){}
+      paint();
+    });
+  });
+  paint();
+  var rst = document.getElementById("reset");
+  if (rst) rst.addEventListener("click", function(){
+    boxes.forEach(function(b){
+      b.checked = false;
+      try { localStorage.setItem("cn1.chk." + b.dataset.k, "0"); } catch(e){}
+    });
+    paint();
+  });
+
+})();
+</script>
+</body>
+</html>
