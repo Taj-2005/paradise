@@ -34,7 +34,7 @@ if [[ -z "$CA" ]]; then
   err "    \$(mkcert -CAROOT)/rootCA.pem"
   echo
   err "Copy it from Mac 2 first:"
-  err "    scp $EDGE_IP:~/cn-phase1-team7/infra/mac2-edge/certs/rootCA.pem ~/"
+  err "    scp $EDGE_IP:~/cn-phase1-paradise/infra/mac2-edge/certs/rootCA.pem ~/"
   exit 1
 fi
 
