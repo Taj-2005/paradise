@@ -1,0 +1,49 @@
+---
+title: CN Phase 1 — Request flow for one curl
+---
+sequenceDiagram
+  autonumber
+  participant C as Client<br/>Mac 1 / Mac 4
+  participant D as Private DNS<br/>Mac 1 · dnsmasq
+  participant E as Edge<br/>Mac 2 · nginx
+  participant B as Backend A / B<br/>Mac 3 / Mac 4
+
+  Note over C,B: curl https://app.paradise.test/api/status
+
+  rect rgba(124, 58, 237, 0.10)
+    Note over C,D: APPLICATION LAYER — DNS over UDP/53
+    C ->> D: Standard query A  app.paradise.test<br/>client:ephemeral → 53 (UDP)
+    D -->> C: Response: A → Mac 2's IP, TTL 0
+    Note right of D: A directory lookup, not a connection.<br/>Nothing has contacted the edge yet.
+  end
+
+  rect rgba(8, 145, 178, 0.10)
+    Note over C,E: TRANSPORT LAYER — TCP three-way handshake
+    C ->> E: SYN            client:54821 → :443   Seq=0
+    E -->> C: SYN-ACK        :443 → client:54821   Seq=0 Ack=1
+    C ->> E: ACK            connection established
+    Note right of E: Filter: tcp.flags.syn==1<br/>Completes before any TLS byte is sent.
+  end
+
+  rect rgba(220, 38, 38, 0.10)
+    Note over C,E: SESSION / PRESENTATION — TLS handshake
+    C ->> E: ClientHello — versions, ciphers,<br/>SNI = app.paradise.test
+    E -->> C: ServerHello + Certificate<br/>SAN matches the domain, signed by our local CA
+    C ->> E: Key exchange (ECDHE) · ChangeCipherSpec · Finished
+    Note right of E: TLS TERMINATES HERE.<br/>Everything after this is Application Data.
+  end
+
+  rect rgba(37, 99, 235, 0.10)
+    Note over C,B: APPLICATION LAYER — HTTP
+    C ->> E: GET /api/status   Host: app.paradise.test<br/>(inside encrypted TLS records)
+
+    rect rgba(15, 118, 110, 0.14)
+      Note over E,B: Separate TCP session · plaintext · round robin
+      E ->> B: GET /api/status  HTTP/1.1<br/>X-Forwarded-For, X-Forwarded-Proto
+      B -->> E: 200 OK  X-Backend: A<br/>Cache-Control: max-age=60  ETag: ...
+    end
+
+    E -->> C: 200 OK  X-Backend: A  (re-encrypted)
+  end
+
+  Note over C,B: Within 60s the next request is served from cache — no traffic at all.<br/>After that, If-None-Match → 304 Not Modified: one round trip, no body.

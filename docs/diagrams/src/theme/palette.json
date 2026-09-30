@@ -1,0 +1,18 @@
+{
+  "_comment": "Light -> dark colour swap applied to classDef/linkStyle lines in *.mmd. The .mmd files themselves stay valid, previewable mermaid with the light palette; scripts/build-diagrams.sh applies this map in a single pass to produce the dark variant.",
+  "#f3ecff": "#2a1f45",
+  "#7c3aed": "#a78bfa",
+  "#1e1b2e": "#ece7fb",
+  "#e8f0ff": "#14233d",
+  "#2563eb": "#5b9dff",
+  "#0f172a": "#e6edf6",
+  "#e6fbf7": "#0c2b28",
+  "#0d9488": "#2dd4bf",
+  "#0f2b28": "#d7fbf5",
+  "#fdf6e3": "#2a2410",
+  "#ca8a04": "#eab308",
+  "#2b2410": "#fbf3d8",
+  "#f1f5f9": "#16233a",
+  "#475569": "#94a3b8",
+  "#0f766e": "#2dd4bf"
+}

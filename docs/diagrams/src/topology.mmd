@@ -1,0 +1,44 @@
+---
+title: CN Phase 1 — Network topology
+---
+flowchart TB
+
+  subgraph LAN["Private LAN &mdash; one Wi-Fi / switch, single /24 broadcast domain"]
+    direction TB
+
+    C["<b>Client</b><br/>curl / browser<br/><i>runs on Mac 1 or Mac 4</i>"]
+
+    DNS["<b>Mac 1 &middot; Private DNS</b><br/>dnsmasq &middot; UDP/TCP 53<br/>authoritative for *.paradise.test<br/><i>&asymp; Route 53 private hosted zone</i>"]
+
+    EDGE["<b>Mac 2 &middot; Edge</b><br/>nginx &middot; TLS termination<br/>reverse proxy &middot; round robin<br/>:443 &nbsp;(or :8443)<br/><i>&asymp; AWS ALB + ACM certificate</i>"]
+
+    BA["<b>Mac 3 &middot; Backend A</b><br/>Express &middot; 0.0.0.0:3001<br/>X-Backend: A<br/><i>&asymp; EC2 in a target group</i>"]
+
+    BB["<b>Mac 4 &middot; Backend B</b><br/>Express &middot; 0.0.0.0:3002<br/>X-Backend: B<br/><i>also acts as a test client</i>"]
+  end
+
+  C  -- "<b>1 &middot; DNS query</b><br/>A? app.paradise.test<br/>UDP/53" --> DNS
+  DNS -. "answer: Mac 2's IP<br/>TTL 0" .-> C
+
+  C  == "<b>2 &middot; TCP handshake, TLS, HTTP</b><br/>client:ephemeral &rarr; :443<br/><b>encrypted</b>" ==> EDGE
+
+  EDGE -- "<b>3 &middot; proxy_pass</b><br/>plain HTTP/1.1<br/>separate TCP session" --> BA
+  EDGE -- "round robin" --> BB
+
+  classDef dns   fill:#f3ecff,stroke:#7c3aed,stroke-width:2px,color:#1e1b2e
+  classDef edge  fill:#e8f0ff,stroke:#2563eb,stroke-width:2px,color:#0f172a
+  classDef ba    fill:#e6fbf7,stroke:#0d9488,stroke-width:2px,color:#0f2b28
+  classDef bb    fill:#fdf6e3,stroke:#ca8a04,stroke-width:2px,color:#2b2410
+  classDef cli   fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#0f172a
+
+  class DNS dns
+  class EDGE edge
+  class BA ba
+  class BB bb
+  class C cli
+
+  linkStyle 0 stroke:#7c3aed,stroke-width:2px
+  linkStyle 1 stroke:#7c3aed,stroke-width:2px,stroke-dasharray:5 4
+  linkStyle 2 stroke:#2563eb,stroke-width:3px
+  linkStyle 3 stroke:#0f766e,stroke-width:2px
+  linkStyle 4 stroke:#0f766e,stroke-width:2px

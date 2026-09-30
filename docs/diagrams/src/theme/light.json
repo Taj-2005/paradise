@@ -1,0 +1,50 @@
+{
+  "theme": "base",
+  "fontFamily": "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif",
+  "flowchart": {
+    "htmlLabels": true,
+    "wrappingWidth": 320,
+    "nodeSpacing": 55,
+    "rankSpacing": 70,
+    "padding": 14,
+    "curve": "basis",
+    "useMaxWidth": true
+  },
+  "sequence": {
+    "wrap": true,
+    "width": 190,
+    "actorMargin": 70,
+    "boxMargin": 12,
+    "noteMargin": 12,
+    "messageMargin": 42,
+    "useMaxWidth": true
+  },
+  "themeVariables": {
+    "background": "#ffffff",
+    "primaryColor": "#f1f5f9",
+    "primaryTextColor": "#0f172a",
+    "primaryBorderColor": "#475569",
+    "lineColor": "#475569",
+    "textColor": "#0f172a",
+    "mainBkg": "#f1f5f9",
+    "nodeBorder": "#475569",
+    "clusterBkg": "#f8fafc",
+    "clusterBorder": "#94a3b8",
+    "titleColor": "#0f172a",
+    "edgeLabelBackground": "#ffffff",
+    "actorBkg": "#e8f0ff",
+    "actorBorder": "#2563eb",
+    "actorTextColor": "#0f172a",
+    "actorLineColor": "#94a3b8",
+    "signalColor": "#334155",
+    "signalTextColor": "#0f172a",
+    "labelBoxBkgColor": "#e8f0ff",
+    "labelBoxBorderColor": "#2563eb",
+    "labelTextColor": "#0f172a",
+    "loopTextColor": "#0f172a",
+    "noteBkgColor": "#fffbe6",
+    "noteBorderColor": "#ca8a04",
+    "noteTextColor": "#2b2410",
+    "sequenceNumberColor": "#ffffff"
+  }
+}
