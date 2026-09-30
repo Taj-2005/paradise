@@ -379,8 +379,8 @@ Pick your machine below.</p>
 <div class="panel on" id="p0">
   <ol class="steps">
     <li><strong>Clone the repo on all four machines</strong>
-      <div class="codewrap"><pre><code>git clone &lt;your-repo-url&gt; cn-phase1-paradise
-cd cn-phase1-paradise</code></pre></div>
+      <div class="codewrap"><pre><code>git clone https://github.com/Taj-2005/paradise.git
+cd paradise</code></pre></div>
     </li>
     <li><strong>Find each machine's LAN address</strong>
       <p>Run on every Mac and write the four values down.</p>
@@ -394,9 +394,9 @@ cd cn-phase1-paradise</code></pre></div>
       <div class="codewrap"><pre><code>cp .env.example .env
 $EDITOR .env      # set DNS_IP, EDGE_IP, BACKEND_A_IP, BACKEND_B_IP
 ./scripts/render-configs.sh</code></pre></div>
-      <div class="codewrap"><pre><code>scp .env user@&lt;mac2&gt;:~/cn-phase1-paradise/.env
-scp .env user@&lt;mac3&gt;:~/cn-phase1-paradise/.env
-scp .env user@&lt;mac4&gt;:~/cn-phase1-paradise/.env</code></pre></div>
+      <div class="codewrap"><pre><code>scp .env user@&lt;mac2&gt;:~/paradise/.env
+scp .env user@&lt;mac3&gt;:~/paradise/.env
+scp .env user@&lt;mac4&gt;:~/paradise/.env</code></pre></div>
     </li>
     <li><strong>Install this machine's prerequisites</strong>
       <p>Detects the role from this machine's IP and installs only what it needs.</p>

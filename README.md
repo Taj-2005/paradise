@@ -99,11 +99,11 @@ only what that role needs.
 ### Step 0 · All machines
 
 ```bash
-git clone <this-repo> cn-phase1-paradise && cd cn-phase1-paradise
+git clone https://github.com/Taj-2005/paradise.git && cd paradise
 cp .env.example .env
 $EDITOR .env                  # set DNS_IP, EDGE_IP, BACKEND_A_IP, BACKEND_B_IP
 ./scripts/render-configs.sh
-scp .env user@<other-mac>:~/cn-phase1-paradise/.env    # same .env on all four
+scp .env user@<other-mac>:~/paradise/.env    # same .env on all four
 ./scripts/bootstrap.sh
 ```
 

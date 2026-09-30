@@ -30,7 +30,7 @@ Copy the same `.env` to the other three machines — it is the single source of
 truth and they must agree.
 
 ```bash
-scp .env <user>@<mac2>:~/cn-phase1-paradise/.env
+scp .env <user>@<mac2>:~/paradise/.env
 ```
 
 > If `ipconfig getifaddr en0` prints nothing, your LAN is not on `en0`.
