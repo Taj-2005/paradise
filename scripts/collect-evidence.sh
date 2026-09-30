@@ -195,8 +195,7 @@ cat <<NEXT
     D2         write the Cache-Control explanation in your own words
     D3         ./scripts/failure-demo.sh   (writes its own evidence file)
 
-  Then open ${C_BLD}submission/form-guide.html${C_OFF} and paste each file into
-  the matching field. (That folder is gitignored working material — if it is
-  missing, you are on a different machine than the one that prepared it.)
+  Then paste each file into its form field. ${C_BLD}evidence/README.md${C_OFF}
+  maps every field to the file that answers it.
 
 NEXT
