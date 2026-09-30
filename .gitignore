@@ -1,0 +1,59 @@
+# ── Secrets: NEVER commit private keys ───────────────────────────────────────
+# The repo is public. A committed TLS private key is an automatic finding.
+*.key
+*.pem
+*.p12
+*.pfx
+!**/*.pub.pem
+infra/mac2-edge/certs/*
+!infra/mac2-edge/certs/.gitkeep
+!infra/mac2-edge/certs/README.md
+
+# ── Local machine config ─────────────────────────────────────────────────────
+.env
+*.local
+infra/*/\.env
+
+# ── Generated configs (rendered from .env by scripts/render-configs.sh) ──────
+# Templates ARE committed; rendered output is not, so no stale IPs in git.
+infra/mac1-dns/dnsmasq.conf
+infra/mac2-edge/nginx/nginx.conf
+infra/mac2-edge/nginx/conf.d/*.conf
+
+# ── Node ─────────────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+.npm/
+coverage/
+
+# ── Internal working documents ───────────────────────────────────────────────
+# The repo must be public for submission. These three are for the team, not the
+# evaluator: form-guide.html carries a model answer for every form field,
+# form-answers.md will hold our enrolment numbers and Drive link, and
+# video-script.md is the shot list. They stay on our machines.
+# The folder README is kept so a fresh clone explains the gap rather than
+# leaving a dangling reference.
+submission/*
+!submission/README.md
+
+# ── Generated raster diagrams ────────────────────────────────────────────────
+# The committed SVGs are what every doc renders. PNGs are an opt-in convenience
+# for slide decks (WITH_PNG=1 make diagrams) and are ~7x the size.
+docs/diagrams/*.png
+
+# ── Packet captures: keep filtered + small, never multi-hundred-MB dumps ─────
+*.pcap
+evidence/captures/*.pcapng
+!evidence/captures/.gitkeep
+!evidence/captures/README.md
+
+# ── macOS ────────────────────────────────────────────────────────────────────
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# ── Editors ──────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
