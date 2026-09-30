@@ -3,9 +3,9 @@
 Form field D2 asks for **2–4 sentences in your own words**. Write them here,
 then paste them into the form.
 
-The same question comes back in the individual viva (Q31–Q34 in
-[docs/viva-prep.md](../../docs/viva-prep.md)), so write something you can say
-aloud without notes.
+The same question comes back in the individual viva, so write something you can
+say aloud without notes. (Our question bank is in `submission/viva-prep.md`,
+which is kept out of the repo — see [submission/README.md](../../submission/README.md).)
 
 ## Our answer
 
