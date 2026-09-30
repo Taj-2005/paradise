@@ -63,14 +63,44 @@ if sudo lsof -nP -iUDP:53 2>/dev/null | grep -v dnsmasq | grep -q LISTEN; then
 fi
 
 # ── 5. Start as a launchd service so it survives reboots and sleep ──────────
-info "Restarting dnsmasq…"
-if sudo brew services list 2>/dev/null | grep -q '^dnsmasq.*started'; then
-  sudo brew services restart dnsmasq
-else
-  sudo brew services start dnsmasq
+# `brew services start` can fail with "Bootstrap failed: 5: Input/output error".
+# That is launchd's EIO, and it means launchd still holds a registration for
+# sh.brew.dnsmasq from an earlier attempt — even when no dnsmasq is running.
+# Booting the label out first clears it. If launchd still refuses, we fall back
+# to running dnsmasq directly, which is all the demo actually needs.
+start_dnsmasq() {
+  if sudo brew services list 2>/dev/null | grep -q '^dnsmasq.*started'; then
+    sudo brew services restart dnsmasq 2>&1 && return 0
+  else
+    sudo brew services start dnsmasq 2>&1 && return 0
+  fi
+  return 1
+}
+
+info "Starting dnsmasq…"
+if ! start_dnsmasq >/dev/null 2>&1; then
+  warn "launchd refused the service — clearing a stale registration and retrying."
+  sudo launchctl bootout system/sh.brew.dnsmasq 2>/dev/null || true
+  sleep 1
+  if ! start_dnsmasq >/dev/null 2>&1; then
+    warn "brew services still will not start it. Running dnsmasq directly instead."
+    warn "This does not survive a reboot — re-run 'make dns' if the Mac restarts."
+    sudo pkill -x dnsmasq 2>/dev/null || true
+    sleep 1
+    sudo dnsmasq --conf-file="$CONF_DST"
+  fi
 fi
 
 sleep 2
+
+# Whatever route we took, something must now be listening on 53.
+if ! sudo lsof -nP -iUDP:53 2>/dev/null | grep -q dnsmasq; then
+  err "dnsmasq is still not listening on UDP/53."
+  err "Check the log:  tail -20 $LOG"
+  err "Try by hand:    sudo dnsmasq --conf-file=$CONF_DST --no-daemon"
+  exit 1
+fi
+ok "dnsmasq is listening on UDP/53"
 
 # ── 6. Prove it works from this machine ─────────────────────────────────────
 step "Self-test"
