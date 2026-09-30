@@ -33,8 +33,7 @@ coverage/
 # video-script.md is the shot list. They stay on our machines.
 # The folder README is kept so a fresh clone explains the gap rather than
 # leaving a dangling reference.
-submission/*
-!submission/README.md
+submission/
 
 # ── Generated raster diagrams ────────────────────────────────────────────────
 # The committed SVGs are what every doc renders. PNGs are an opt-in convenience

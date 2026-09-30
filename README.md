@@ -300,7 +300,6 @@ silently degrade into full responses.**
 ├── scripts/                 bootstrap, render, preflight, verify, capture,
 │                            evidence, failure demos, restore, smoke
 ├── evidence/                collected proof, indexed to the form fields
-├── submission/              internal working docs — gitignored, see its README
 ├── .env.example             single source of truth for every address
 └── Makefile                 `make` for the task list
 ```

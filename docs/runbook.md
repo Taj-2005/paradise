@@ -114,8 +114,8 @@ make evidence           # writes A1, A3, A4, A5, B1, B2, B3, D1
 make demo-fail          # choose A; writes D3
 ```
 
-Then open `submission/form-guide.html` and paste each file into its field.
-(That folder is gitignored — it is working material, not a deliverable.)
+Then paste each file into its form field. [`evidence/README.md`](../evidence/README.md)
+maps every field to the file that answers it, and lists the rules that cost marks.
 
 ---
 
