@@ -63,30 +63,34 @@ ok "listen-address is not loopback"
 # UDP-only occupant — the normal case for DNS — slips straight through.
 CONFLICT="$(sudo lsof -nP -iUDP:53 -iTCP:53 2>/dev/null | awk 'NR>1 && $1 != "dnsmasq"')"
 if [[ -n "$CONFLICT" ]]; then
-  err "Port 53 is already in use by another process:"
+  err "Port 53 is already held by another process:"
   printf '%s\n' "$CONFLICT" | sed 's/^/      /' >&2
   echo >&2
-  err "dnsmasq cannot bind while that holds the port. Usual causes:"
-  err "  mDNSResponder  — turn off System Settings > General > Sharing >"
-  err "                   Internet Sharing, which makes macOS run a DNS proxy"
-  err "  a VPN / zero-trust agent (Zscaler, Cloudflare WARP, Cisco Secure"
-  err "                   Client, Tailscale) — quit it for the demonstration"
+  err "dnsmasq cannot start. This is not recoverable by configuration:"
+  err "macOS refuses a specific bind ($DNS_IP:53) while another socket holds"
+  err "the wildcard (*:53), even with SO_REUSEADDR and SO_REUSEPORT set, so"
+  err "bind-dynamic does not help. One process owns port 53 per machine."
   echo >&2
-  err "Clients set their resolver by IP only, with no port, so the service has"
-  err "to be on 53. If you cannot free it on this Mac, run the DNS role on a"
-  err "different machine and update DNS_IP in .env."
+  err "Clients set a resolver by IP with no port, so the service must be on 53."
   echo >&2
-  # Not fatal. Our config uses bind-dynamic, which binds a specific address
-  # rather than the wildcard, and a specific bind can succeed alongside a
-  # wildcard one when the existing socket allows address reuse. Whether that
-  # works here is a question for the kernel, not for us to guess — so try it
-  # and let the post-start check on UDP/53 decide.
-  warn "Trying anyway — bind-dynamic binds $DNS_IP specifically, not *:53,"
-  warn "which can coexist with a wildcard listener. The check after startup"
-  warn "will tell us for certain."
-else
-  ok "Port 53 is free"
+  err "${C_BLD}Fix: run the DNS role on a Mac where port 53 is free.${C_OFF}"
+  err "  On each of the other machines:"
+  err "      sudo lsof -nP -iUDP:53   # want: no output"
+  err "  Then on the Mac that is free, swap the roles in .env:"
+  err "      DNS_IP=<that machine>      and give this Mac that machine's old role"
+  err "      make render && make dns"
+  err "  Nothing hardcodes an address, so that is the whole change."
+  echo >&2
+  if printf '%s' "$CONFLICT" | grep -q mDNSResponder; then
+    err "The occupant here is mDNSResponder, which binds 53 when a DNS-proxy"
+    err "NetworkExtension is active. Check with:"
+    err "      systemextensionsctl list | grep -i proxy"
+    err "If that names your institution's management agent, do not remove it —"
+    err "move the DNS role to another machine instead."
+  fi
+  exit 1
 fi
+ok "Port 53 is free"
 
 # ── 5. Start as a launchd service so it survives reboots and sleep ──────────
 # `brew services start` can fail with "Bootstrap failed: 5: Input/output error".
