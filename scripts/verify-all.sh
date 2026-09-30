@@ -16,6 +16,10 @@ load_env
 
 hdr "Phase 1 acceptance — $TEAM — from $(hostname -s) ($(my_ip))"
 
+# Every curl below is guarded with `|| true`. The library runs under `set -e`,
+# and a command substitution whose command fails takes the whole script with it
+# — so one unreachable endpoint used to hide every check after it.
+
 if [[ "$(my_role)" == "mac2-edge" ]]; then
   warn "You are on the EDGE machine. Form field A3 requires client-side proof."
   warn "Re-run this from Mac 1, 3 or 4 before collecting evidence."
@@ -72,7 +76,7 @@ check_icontains "connected to $APP_DOMAIN at $EDGE_IP"     "$V" "$EDGE_IP"
 SEEN=""
 for _ in 1 2 3 4 5 6; do
   SEEN="$SEEN$(curl -s -D - -o /dev/null --max-time 5 "$APP_URL/api/status" 2>/dev/null \
-      | awk -F': ' 'tolower($1)=="x-backend"{gsub(/\r/,"");printf "%s",$2}')"
+      | awk -F': ' 'tolower($1)=="x-backend"{gsub(/\r/,"");printf "%s",$2}' || true)"
 done
 info "six requests served by: ${SEEN:-<none>}"
 check_contains "Backend A appears"                         "$SEEN" "A"
@@ -97,12 +101,12 @@ else
   warn "requests by IP were not refused — check the default_server block"
 fi
 
-check_icontains "edge identifies itself"  "$(curl -sI --max-time 5 "$APP_URL/api/status")" "x-edge"
+check_icontains "edge identifies itself"  "$(curl -sI --max-time 5 "$APP_URL/api/status" || true)" "x-edge"
 
 # ════════ D — caching ════════════════════════════════════════════════════
 step "D · HTTP caching (Task F)"
 
-H="$(curl -sI --max-time 5 "$APP_URL/api/status")"
+H="$(curl -sI --max-time 5 "$APP_URL/api/status" || true)"
 check_icontains "Cache-Control present"                    "$H" "max-age=$CACHE_MAX_AGE"
 check_icontains "ETag present"                             "$H" "etag"
 check_icontains "Date present"                             "$H" "date"
@@ -111,18 +115,18 @@ check_icontains "X-Backend present"                        "$H" "x-backend"
 # The 304 demo runs against /api/cacheable, whose body is byte-identical on
 # both backends. /api/status embeds the backend id, so its ETag differs per
 # replica and round-robin would make the 304 intermittent.
-ETAG="$(curl -sI --max-time 5 "$APP_URL/api/cacheable" \
-        | awk -F': ' 'tolower($1)=="etag"{gsub(/\r/,"");print $2}' | head -1)"
+ETAG="$(curl -sI --max-time 5 "$APP_URL/api/cacheable" 2>/dev/null \
+        | awk -F': ' 'tolower($1)=="etag"{gsub(/\r/,"");print $2}' | head -1 || true)"
 CODES=""
 for _ in 1 2 3 4; do
   CODES="$CODES$(curl -s -o /dev/null -w '%{http_code} ' --max-time 5 \
-    -H "If-None-Match: $ETAG" "$APP_URL/api/cacheable")"
+    -H "If-None-Match: $ETAG" "$APP_URL/api/cacheable" || true)"
 done
 info "conditional requests returned: $CODES"
 check_contains     "304 Not Modified returned"             "$CODES" "304"
 check_not_contains "304 is stable across both backends"    "$CODES" "200"
 
-NOCACHE="$(curl -sI --max-time 5 "$APP_URL/api/time")"
+NOCACHE="$(curl -sI --max-time 5 "$APP_URL/api/time" || true)"
 check_icontains "uncacheable endpoint says no-store"       "$NOCACHE" "no-store"
 
 # ════════ E — failure behaviour is available ═════════════════════════════
