@@ -75,9 +75,18 @@ if [[ -n "$CONFLICT" ]]; then
   err "Clients set their resolver by IP only, with no port, so the service has"
   err "to be on 53. If you cannot free it on this Mac, run the DNS role on a"
   err "different machine and update DNS_IP in .env."
-  exit 1
+  echo >&2
+  # Not fatal. Our config uses bind-dynamic, which binds a specific address
+  # rather than the wildcard, and a specific bind can succeed alongside a
+  # wildcard one when the existing socket allows address reuse. Whether that
+  # works here is a question for the kernel, not for us to guess — so try it
+  # and let the post-start check on UDP/53 decide.
+  warn "Trying anyway — bind-dynamic binds $DNS_IP specifically, not *:53,"
+  warn "which can coexist with a wildcard listener. The check after startup"
+  warn "will tell us for certain."
+else
+  ok "Port 53 is free"
 fi
-ok "Port 53 is free"
 
 # ── 5. Start as a launchd service so it survives reboots and sleep ──────────
 # `brew services start` can fail with "Bootstrap failed: 5: Input/output error".
