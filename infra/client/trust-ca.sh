@@ -67,9 +67,18 @@ OUT="$(curl -sv --max-time 5 \
 if printf '%s' "$OUT" | grep -qi "SSL certificate verify ok"; then
   ok "Certificate verified with no -k flag. You are ready for evaluation."
   printf '%s\n' "$OUT" | grep -iE 'SSL connection using|subject:|issuer:|^< HTTP' | sed 's/^/      /'
-elif printf '%s' "$OUT" | grep -qi "Connection refused\|Could not resolve\|Failed to connect"; then
-  warn "Trust is installed, but the edge is not reachable from here yet."
-  warn "Start nginx on Mac 2, then re-run this to confirm."
+elif printf '%s' "$OUT" | grep -qiE "connection refused|could not resolve|failed to connect|timed out|no route to host|couldn't connect|connection reset"; then
+  # Distinguish "cannot reach the edge" from "reached it and rejected its cert".
+  # Reporting a connection failure as a trust failure sends people to re-install
+  # a CA that was already fine.
+  warn "Trust is installed. The edge is simply not reachable from here:"
+  printf '%s\n' "$OUT" | grep -iE 'trying|refused|timed out|no route|reset' | sed 's/^/      /' >&2
+  echo >&2
+  warn "Nothing is answering on $EDGE_IP:$HTTPS_PORT. On the edge machine:"
+  warn "      make edge          # start nginx"
+  warn "      sudo lsof -nP -iTCP:$HTTPS_PORT -sTCP:LISTEN"
+  warn "Then re-run this to confirm the certificate."
+  exit 0
 else
   err "Certificate still not trusted:"
   printf '%s\n' "$OUT" | grep -iE 'SSL|certificate|verify' | sed 's/^/      /' >&2
