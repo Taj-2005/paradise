@@ -1,0 +1,65 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  CN Phase 1 — main nginx config   (Mac 2 · {{EDGE_IP}})
+#
+#  GENERATED FILE — do not edit.
+#  Source: infra/mac2-edge/nginx/nginx.conf.template   Values: .env
+#  Regenerate with:  ./scripts/render-configs.sh
+#
+#  This replaces Homebrew's stock nginx.conf. The interesting part — the
+#  upstream pool, TLS and proxying — lives in conf.d/site.conf.
+# ═══════════════════════════════════════════════════════════════════════════
+
+worker_processes auto;
+error_log {{BREW_PREFIX}}/var/log/nginx/error.log warn;
+pid       {{BREW_PREFIX}}/var/run/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include       {{BREW_PREFIX}}/etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    # ── Log format ─────────────────────────────────────────────────────────
+    # Extended beyond nginx's default to record the four things that matter
+    # for this project, and that you will be asked about:
+    #   $upstream_addr          which backend actually served it (LB proof)
+    #   $ssl_protocol/$ssl_cipher  what TLS was negotiated  (Task E proof)
+    #   $upstream_response_time how long the backend took
+    #   $request_time           total including TLS handshake
+    log_format main '$remote_addr - [$time_local] "$request" '
+                    '$status $body_bytes_sent '
+                    'upstream=$upstream_addr backend=$upstream_http_x_backend '
+                    'tls=$ssl_protocol/$ssl_cipher '
+                    'rt=$request_time urt=$upstream_response_time';
+
+    access_log {{BREW_PREFIX}}/var/log/nginx/access.log main;
+
+    sendfile        on;
+    tcp_nopush      on;
+    keepalive_timeout 65;
+    server_tokens   off;   # do not advertise the nginx version in responses
+
+    # ── Default server: reject anything that is not one of our names ───────
+    # A request that arrives by IP address has no matching server_name, so it
+    # lands here and gets 444 (nginx closes without responding).
+    #
+    # This enforces spec §3's "access by domain name, never by IP" rule at the
+    # server, and it is a nice thing to demonstrate:
+    #     curl -k https://{{EDGE_IP}}/     -> empty reply
+    #     curl    https://{{APP_DOMAIN}}/  -> 200
+    # Same machine, same port; only the Host/SNI differs.
+    server {
+        listen {{HTTP_PORT}}  default_server;
+        listen {{HTTPS_PORT}} ssl default_server;
+        server_name _;
+
+        ssl_certificate     {{CERT_DIR}}/{{APP_DOMAIN}}.crt;
+        ssl_certificate_key {{CERT_DIR}}/{{APP_DOMAIN}}.key;
+
+        return 444;
+    }
+
+    include {{BREW_PREFIX}}/etc/nginx/conf.d/*.conf;
+}

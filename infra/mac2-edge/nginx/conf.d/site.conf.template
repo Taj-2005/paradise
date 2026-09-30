@@ -1,0 +1,129 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  CN Phase 1 — Edge reverse proxy + load balancer   (Mac 2 · {{EDGE_IP}})
+#
+#  GENERATED FILE — do not edit.
+#  Source: infra/mac2-edge/nginx/conf.d/site.conf.template   Values: .env
+#  Regenerate with:  ./scripts/render-configs.sh
+#
+#  Spec Tasks D + E. Cloud equivalent: an AWS Application Load Balancer with
+#  an ACM certificate attached to an HTTPS listener.
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ── Upstream pool — the ALB "target group" ─────────────────────────────────
+# Two backends on two different machines. nginx's default balancing method is
+# round robin: request 1 -> A, request 2 -> B, request 3 -> A … which is what
+# makes the X-Backend header alternate in the Task D proof.
+upstream backend_pool {
+    # max_fails / fail_timeout are PASSIVE health checking, and they are what
+    # makes the failure demo (spec §6.3 "one backend is stopped") work cleanly:
+    # after 1 failed connection nginx marks that server down for 10s and sends
+    # everything to the survivor. Without these, every other request would
+    # 502 while nginx kept trying the dead box.
+    server {{BACKEND_A_IP}}:{{BACKEND_A_PORT}} max_fails=1 fail_timeout=10s;
+    server {{BACKEND_B_IP}}:{{BACKEND_B_PORT}} max_fails=1 fail_timeout=10s;
+
+    # Reuse idle TCP connections to the backends instead of opening a fresh
+    # one per request. Relevant to the transport-layer discussion: the client
+    # <-> edge and edge <-> backend connections are entirely separate TCP
+    # sessions with their own handshakes, ports and lifetimes.
+    keepalive 16;
+}
+
+# ── Port 80 — redirect everything to HTTPS ─────────────────────────────────
+# Kept deliberately: it lets us show in Wireshark that the plaintext request
+# carries a readable Host header and a 301, whereas the HTTPS one does not.
+server {
+    listen {{HTTP_PORT}};
+    listen [::]:{{HTTP_PORT}};
+    server_name {{APP_DOMAIN}} {{API_DOMAIN}};
+
+    # 301 permanent so browsers remember. Preserves the path.
+    return 301 https://$host$request_uri;
+}
+
+# ── Port {{HTTPS_PORT}} — TLS termination + reverse proxy ──────────────────
+server {
+    listen {{HTTPS_PORT}} ssl;
+    listen [::]:{{HTTPS_PORT}} ssl;
+    http2 on;
+
+    server_name {{APP_DOMAIN}} {{API_DOMAIN}};
+
+    # ── TLS (spec Task E) ──────────────────────────────────────────────────
+    # TLS TERMINATES HERE. The client's encrypted session ends at this
+    # machine; nginx decrypts, then makes a *separate, plaintext* HTTP request
+    # to the backend over the trusted LAN. This is exactly what an ALB with an
+    # ACM certificate does, and it is why Wireshark shows encrypted
+    # Application Data on the client side but readable HTTP on the backend
+    # side — a great thing to point at during the viva.
+    ssl_certificate     {{CERT_DIR}}/{{APP_DOMAIN}}.crt;
+    ssl_certificate_key {{CERT_DIR}}/{{APP_DOMAIN}}.key;
+
+    # TLS 1.2 and 1.3 only. Offering 1.3 lets Wireshark show the shorter
+    # 1-RTT handshake; keeping 1.2 means older clients still connect.
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_ciphers         ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305;
+
+    # Session resumption. Worth knowing for the viva: a resumed session skips
+    # the certificate exchange, so a second curl shows a visibly shorter
+    # handshake in Wireshark than the first.
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 1h;
+    ssl_session_tickets off;
+
+    access_log {{BREW_PREFIX}}/var/log/nginx/{{TEAM}}-access.log main;
+    error_log  {{BREW_PREFIX}}/var/log/nginx/{{TEAM}}-error.log  warn;
+
+    # ── Proxy to the upstream pool ─────────────────────────────────────────
+    location / {
+        proxy_pass http://backend_pool;
+
+        # HTTP/1.1 + empty Connection header are BOTH required for the
+        # upstream `keepalive` directive above to take effect. nginx defaults
+        # to HTTP/1.0 upstream, which cannot keep connections alive.
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+
+        # Pass the original Host through, otherwise the backend sees
+        # "backend_pool" and cannot do name-based routing or logging.
+        proxy_set_header Host              $host;
+
+        # The X-Forwarded-* family: how the backend learns what the *client*
+        # asked for, given that as far as its TCP socket is concerned the peer
+        # is nginx. X-Forwarded-Proto is how it knows the client used HTTPS
+        # even though this leg is plaintext.
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host  $host;
+        proxy_set_header X-Forwarded-Port  $server_port;
+
+        # Fail over to the other backend on error/timeout instead of handing
+        # the client a 502. This is the mechanism behind the §6.3 failure demo.
+        proxy_next_upstream error timeout http_502 http_503 http_504;
+        proxy_next_upstream_tries 2;
+
+        proxy_connect_timeout 2s;
+        proxy_send_timeout    10s;
+        proxy_read_timeout    10s;
+
+        # ── Debug headers ──────────────────────────────────────────────────
+        # X-Backend comes FROM the backend and passes through untouched — that
+        # is the load-balancing proof. These two are added by the edge so you
+        # can see the upstream's real address and how long it took, which is
+        # invaluable while diagnosing.
+        add_header X-Upstream-Addr $upstream_addr        always;
+        add_header X-Upstream-Time $upstream_response_time always;
+        add_header X-Edge          "nginx@{{EDGE_IP}}"   always;
+    }
+
+    # ── Health endpoint served by the edge itself ──────────────────────────
+    # Answers even when both backends are dead, which is how you demonstrate
+    # "the edge is up but the application is down" — the 502 case in §6.3.
+    location = /edge-health {
+        access_log off;
+        add_header Content-Type application/json always;
+        return 200 '{"edge":"nginx@{{EDGE_IP}}","status":"ok"}';
+    }
+}
