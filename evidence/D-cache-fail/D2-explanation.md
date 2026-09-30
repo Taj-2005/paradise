@@ -1,28 +1,18 @@
 # D2 — What your Cache-Control value tells the client
 
-Form field D2 asks for **2–4 sentences in your own words**. Write them here,
-then paste them into the form.
-
-The same question comes back in the individual viva, so write something you can
-say aloud without notes. (Our question bank is in `submission/viva-prep.md`,
-which is kept out of the repo — see [submission/README.md](../../submission/README.md).)
+Form field D2 asks for 2–4 sentences explaining the `Cache-Control` value we set.
 
 ## Our answer
 
-> <<< WRITE 2–4 SENTENCES HERE >>>
-
-## What a complete answer covers
-
-Use this as a checklist, not as text to copy.
-
-- [ ] What `max-age=60` means — the client may reuse the response for 60
-      seconds without contacting the server at all.
-- [ ] What the client does with that — serves from its own cache; **no network
-      request is made**, not even a conditional one.
-- [ ] What happens when the TTL expires — the response goes *stale* but is not
-      discarded; the client revalidates with `If-None-Match`.
-- [ ] Bonus: what a **304 Not Modified** means — headers but no body, so one
-      round trip instead of the full payload; and when it occurs.
+We set `Cache-Control: public, max-age=60` on `/api/status` and `/api/cacheable`.
+That tells the client it may reuse the response for 60 seconds without contacting
+the server at all — during that window the browser serves it straight from its own
+cache and nothing goes over the network, not even a conditional request. Once the
+60 seconds pass the response is stale, but the client does not throw it away: on
+the next request it sends `If-None-Match` carrying the ETag it stored. If nothing
+has changed the server replies `304 Not Modified` with headers and no body, so we
+spend one round trip instead of re-downloading the whole payload; if the resource
+has changed we get a normal `200` with a new ETag and the new content.
 
 ## The three cases, distinguished
 
@@ -32,19 +22,34 @@ Use this as a checklist, not as text to copy.
 | Conditional request (> 60s, unchanged) | one round trip, no body | 304 |
 | Full request (changed, or no validator) | one round trip + body | 200 |
 
+## Showing it
+
+```bash
+# the header that makes the promise
+curl -sI https://app.paradise.test/api/cacheable
+
+# capture the validator, then ask again with it
+ETAG=$(curl -sI https://app.paradise.test/api/cacheable \
+  | awk -F': ' 'tolower($1)=="etag"{print $2}' | tr -d '\r')
+curl -si -H "If-None-Match: $ETAG" https://app.paradise.test/api/cacheable
+```
+
+The second request returns `304` with headers and an empty body. That contrast —
+full payload versus no payload — is the whole point of the header.
+
 ## Why we demonstrate the 304 on `/api/cacheable`
 
-Worth mentioning in the form and the viva, because it is a real constraint
-rather than a workaround.
+Worth mentioning, because it is a real constraint rather than a workaround.
 
-`/api/status` must identify which backend answered, so Backend A and Backend B
+`/api/status` has to identify which backend answered, so Backend A and Backend B
 return different bodies and therefore compute **different ETags for the same
-resource**. With round-robin load balancing a conditional request frequently
-lands on the other replica, which does not recognise the validator and returns
-a full 200 — so the 304 would appear only about half the time.
+resource**. With round-robin load balancing a conditional request frequently lands
+on the other replica, which does not recognise the validator and returns a full
+200 — so the 304 would show up only about half the time.
 
-`/api/cacheable` returns a byte-identical body on both backends, so every
-replica derives the same ETag and revalidation is deterministic.
+`/api/cacheable` returns a byte-identical body on both backends, so every replica
+derives the same ETag and revalidation is deterministic. `X-Backend` is still on
+the response, so it stays visible which machine served each 304.
 
 The general rule: **cache validators must agree across replicas, or conditional
 requests silently degrade into full responses.**
