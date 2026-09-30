@@ -22,14 +22,36 @@ printf '  gateway    %s\n' "$(route -n get default 2>/dev/null | awk '/gateway:/
 printf '  MAC        %s\n' "$(ifconfig "$IFACE" 2>/dev/null | awk '/ether/{print $2}')"
 printf '  role       %s\n' "$(my_role)"
 
-# Everyone must be on the same /24 for the flat-LAN assumption to hold.
+# Everyone must be on the same subnet for the flat-LAN assumption to hold.
+# Compare against the ACTUAL netmask, not an assumed /24 — campus networks are
+# routinely /19 or /16, where addresses differing in the third octet are still
+# on the same link and a /24 test would cry wolf on every machine.
 step "2. Same subnet?"
-prefix() { printf '%s' "$1" | cut -d. -f1-3; }
-mine="$(prefix "$MY_IP")"
+MASK="$(ipconfig getoption "$IFACE" subnet_mask 2>/dev/null || echo 255.255.255.0)"
+
+# network address = ip AND mask, octet by octet
+net_of() {
+  local ip="$1" m="$2" o=() i
+  IFS=. read -r a b c d <<< "$ip"
+  IFS=. read -r p q r t <<< "$m"
+  printf '%d.%d.%d.%d' $((a & p)) $((b & q)) $((c & r)) $((d & t))
+}
+# prefix length, for display
+plen() {
+  local m="$1" n=0 x
+  IFS=. read -r a b c d <<< "$m"
+  for x in $a $b $c $d; do
+    while (( x > 0 )); do (( n += x & 1 )); (( x >>= 1 )); done
+  done
+  printf '%d' "$n"
+}
+
+MY_NET="$(net_of "$MY_IP" "$MASK")"
+info "this machine: $MY_IP  mask $MASK  -> network $MY_NET/$(plen "$MASK")"
 for spec in "Mac1:$DNS_IP" "Mac2:$EDGE_IP" "Mac3:$BACKEND_A_IP" "Mac4:$BACKEND_B_IP"; do
   IFS=: read -r label ip <<< "$spec"
-  if [[ "$(prefix "$ip")" == "$mine" ]]; then ok "$label $ip"
-  else warn "$label $ip is on a different /24 than this machine ($mine.x)"; fi
+  if [[ "$(net_of "$ip" "$MASK")" == "$MY_NET" ]]; then ok "$label $ip"
+  else warn "$label $ip is on a different subnet than this machine ($MY_NET/$(plen "$MASK"))"; fi
 done
 
 step "3. Ping every other machine (spec A5)"
