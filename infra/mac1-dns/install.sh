@@ -54,13 +54,30 @@ fi
 ok "listen-address is not loopback"
 
 # ── 4. Port 53 conflict check ───────────────────────────────────────────────
-# macOS runs mDNSResponder, and some VPN clients bind 53 too. If something
-# else already holds the port, dnsmasq starts and immediately dies, which
-# looks identical to "config is wrong" unless you check.
-if sudo lsof -nP -iUDP:53 2>/dev/null | grep -v dnsmasq | grep -q LISTEN; then
-  warn "Something else is already listening on UDP/53:"
-  sudo lsof -nP -iUDP:53 | sed 's/^/      /' >&2
+# macOS runs mDNSResponder, and VPN / zero-trust agents (Zscaler, WARP, Cisco)
+# bind 53 too. If something else already holds the port, dnsmasq fails to
+# create its listening socket and dies, which looks identical to "the config is
+# wrong" unless you check.
+#
+# Note: do NOT filter on "LISTEN" here. That state only appears for TCP, so a
+# UDP-only occupant — the normal case for DNS — slips straight through.
+CONFLICT="$(sudo lsof -nP -iUDP:53 -iTCP:53 2>/dev/null | awk 'NR>1 && $1 != "dnsmasq"')"
+if [[ -n "$CONFLICT" ]]; then
+  err "Port 53 is already in use by another process:"
+  printf '%s\n' "$CONFLICT" | sed 's/^/      /' >&2
+  echo >&2
+  err "dnsmasq cannot bind while that holds the port. Usual causes:"
+  err "  mDNSResponder  — turn off System Settings > General > Sharing >"
+  err "                   Internet Sharing, which makes macOS run a DNS proxy"
+  err "  a VPN / zero-trust agent (Zscaler, Cloudflare WARP, Cisco Secure"
+  err "                   Client, Tailscale) — quit it for the demonstration"
+  echo >&2
+  err "Clients set their resolver by IP only, with no port, so the service has"
+  err "to be on 53. If you cannot free it on this Mac, run the DNS role on a"
+  err "different machine and update DNS_IP in .env."
+  exit 1
 fi
+ok "Port 53 is free"
 
 # ── 5. Start as a launchd service so it survives reboots and sleep ──────────
 # `brew services start` can fail with "Bootstrap failed: 5: Input/output error".
