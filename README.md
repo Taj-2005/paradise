@@ -17,9 +17,9 @@ evidence of every protocol layer in a single request.
 
 | Enrolment | Name | GitHub | Primary machine | Owns |
 |---|---|---|---|---|
-| `2401010436` | Tajuddin Shaik | [@Taj-2005](https://github.com/Taj-2005) | Mac 1 | Private DNS (dnsmasq), repo tooling |
+| `2401010323` | Nipun | [@nipun1803](https://github.com/nipun1803) | Mac 1 | Private DNS (dnsmasq) |
 | `2401010090` | Anushka | [@anu-ushka](https://github.com/anu-ushka) | Mac 2 | Edge: nginx, TLS, load balancing |
-| `2401010323` | Nipun | [@nipun1803](https://github.com/nipun1803) | Mac 3 | Backend A, HTTP caching |
+| `2401010436` | Tajuddin Shaik | [@Taj-2005](https://github.com/Taj-2005) | Mac 3 | Backend A, HTTP caching, repo tooling |
 | `2401010175` | Omkar Hadole | [@omkar-hadole](https://github.com/omkar-hadole) | Mac 4 | Backend B, verification, packet capture |
 
 Every member can explain any part of this system, not only the part they
