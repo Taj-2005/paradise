@@ -1,0 +1,77 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  CN Phase 1 — Private DNS server for {{TEAM}}   (Mac 1 · {{DNS_IP}})
+#
+#  GENERATED FILE — do not edit.
+#  Source: infra/mac1-dns/dnsmasq.conf.template   Values: .env
+#  Regenerate with:  ./scripts/render-configs.sh
+#
+#  Spec Task B. This is our team's equivalent of an AWS Route 53 private
+#  hosted zone: an authoritative resolver for names that exist only inside
+#  our network, forwarding everything else upstream.
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ── The project's A records ────────────────────────────────────────────────
+# address=/name/ip is dnsmasq shorthand for "I am authoritative for this name
+# and everything under it; answer with this A record". Both names point at
+# Mac 2 — the single entry point. Clients never learn the backend IPs, which
+# is the whole point of putting a reverse proxy in front (spec Task D).
+address=/{{APP_DOMAIN}}/{{EDGE_IP}}
+address=/{{API_DOMAIN}}/{{EDGE_IP}}
+
+# ── TTL ────────────────────────────────────────────────────────────────────
+# How long a client may cache the answer above.
+#
+# {{DNS_TTL}} is set from DNS_TTL in .env. Phase 1 uses 0 so demos are
+# deterministic — no client hands you a stale answer mid-recording.
+# Phase 2 Extension B raises this to 30 to *demonstrate* stale caching:
+# change the record, watch clients keep the old IP until the TTL expires.
+local-ttl={{DNS_TTL}}
+
+# ── Listening ──────────────────────────────────────────────────────────────
+# THE SINGLE MOST IMPORTANT LINE IN THIS FILE.
+#
+# dnsmasq defaults to 127.0.0.1. With that default the service works
+# perfectly when tested on Mac 1 itself and is completely invisible to
+# Mac 2, 3 and 4 — `dig` from a client just times out.
+#
+# 0.0.0.0 means "accept queries on every interface", which is what lets the
+# other three laptops use this machine as their resolver.
+listen-address=0.0.0.0
+
+# Bind only to the interface that is actually on the team LAN. Belt and
+# braces with listen-address, and it stops dnsmasq claiming interfaces that
+# appear later (VPN, iPhone tethering) and confusing the demo.
+interface={{IFACE}}
+interface=lo0
+
+# Without this, dnsmasq refuses to start if {{IFACE}} is not up yet at boot.
+bind-dynamic
+
+# ── Upstream forwarding ────────────────────────────────────────────────────
+# Anything that is not one of our .test names gets forwarded here, so the
+# client Macs keep normal internet access while pointing at us as resolver.
+# If you skip this, the team can resolve app.{{TEAM}}.test and nothing else —
+# no Google, no npm install, and a very confused demo.
+no-resolv
+server={{UPSTREAM_DNS}}
+
+# ── Hygiene ────────────────────────────────────────────────────────────────
+# Never forward queries for plain unqualified names or private reverse
+# lookups out to the public internet.
+domain-needed
+bogus-priv
+
+# We are not a DHCP server. Mac 1 hands out names only; the Wi-Fi router
+# keeps handing out addresses.
+no-dhcp-interface={{IFACE}}
+
+# ── Logging ────────────────────────────────────────────────────────────────
+# log-queries writes one line per query to the system log. This is how you
+# PROVE on camera that a client's lookup actually reached this machine:
+#     sudo tail -f /opt/homebrew/var/log/dnsmasq.log
+# Watch a `dig` on Mac 3 appear here in real time.
+log-queries
+log-facility={{BREW_PREFIX}}/var/log/dnsmasq.log
+
+# ── Cache ──────────────────────────────────────────────────────────────────
+cache-size=1000
