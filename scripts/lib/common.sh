@@ -62,6 +62,12 @@ load_env() {
 }
 
 # ── Assertions with a running tally (used by verify-all.sh) ──────────────────
+#
+# These record failures and ALWAYS return 0. That is deliberate: the library
+# runs under `set -e`, so a check returning non-zero would abort the script on
+# the first failure — you would fix one thing, re-run, and discover the next,
+# instead of seeing everything at once. summary() is what reports the tally and
+# exits non-zero at the end.
 PASS_COUNT=0
 FAIL_COUNT=0
 FAILED_CHECKS=()
@@ -72,7 +78,7 @@ check() {
   if "$@" >/dev/null 2>&1; then
     ok "$desc"; PASS_COUNT=$((PASS_COUNT + 1)); return 0
   else
-    err "$desc"; FAIL_COUNT=$((FAIL_COUNT + 1)); FAILED_CHECKS+=("$desc"); return 1
+    err "$desc"; FAIL_COUNT=$((FAIL_COUNT + 1)); FAILED_CHECKS+=("$desc"); return 0
   fi
 }
 
@@ -83,7 +89,7 @@ check_contains() {
     ok "$desc"; PASS_COUNT=$((PASS_COUNT + 1)); return 0
   else
     err "$desc  ${C_DIM}(expected to find: $needle)${C_OFF}"
-    FAIL_COUNT=$((FAIL_COUNT + 1)); FAILED_CHECKS+=("$desc"); return 1
+    FAIL_COUNT=$((FAIL_COUNT + 1)); FAILED_CHECKS+=("$desc"); return 0
   fi
 }
 
@@ -96,7 +102,7 @@ check_icontains() {
     ok "$desc"; PASS_COUNT=$((PASS_COUNT + 1)); return 0
   else
     err "$desc  ${C_DIM}(expected to find: $needle)${C_OFF}"
-    FAIL_COUNT=$((FAIL_COUNT + 1)); FAILED_CHECKS+=("$desc"); return 1
+    FAIL_COUNT=$((FAIL_COUNT + 1)); FAILED_CHECKS+=("$desc"); return 0
   fi
 }
 
@@ -106,7 +112,7 @@ check_not_contains() {
     ok "$desc"; PASS_COUNT=$((PASS_COUNT + 1)); return 0
   else
     err "$desc  ${C_DIM}(should NOT contain: $needle)${C_OFF}"
-    FAIL_COUNT=$((FAIL_COUNT + 1)); FAILED_CHECKS+=("$desc"); return 1
+    FAIL_COUNT=$((FAIL_COUNT + 1)); FAILED_CHECKS+=("$desc"); return 0
   fi
 }
 
