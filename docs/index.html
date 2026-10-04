@@ -152,7 +152,10 @@ details .body{padding:0 .95rem .95rem;border-top:1px solid var(--line);margin-to
 
 figure{margin:1.5rem 0}
 /* Mermaid renders two variants; CSS picks the one matching the viewer's theme. */
-.dia{width:100%;height:auto;display:block;border:1px solid var(--line);
+/* Both diagrams are portrait, so width:100% made them taller than the viewport.
+   Cap the height and let width follow the aspect ratio, centred. */
+.dia{max-width:100%;max-height:min(70vh,620px);width:auto;height:auto;
+  display:block;margin:0 auto;border:1px solid var(--line);
   border-radius:var(--radius);background:var(--bg);padding:.5rem}
 .dia.dk{display:none}
 @media (prefers-color-scheme:dark){ .dia.lt{display:none} .dia.dk{display:block} }
