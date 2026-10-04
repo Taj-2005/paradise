@@ -4,46 +4,42 @@ Naming: `C<n>-<what-it-shows>.png` — the form field first, so the right image 
 obvious when filling in Section C. All taken from
 [`../../captures/full-1.pcapng`](../../captures/full-1.pcapng).
 
-## Usable
-
-| File | Filter used | Shows |
+| File | Filter | Shows |
 |---|---|---|
-| `C1-dns-query-response-list.png` | `dns && ip.addr==10.7.27.161` | The packet list with our query and its answer: `Standard query 0x9969 A app.paradise.test` and `Standard query response 0x9969 A app.paradise.test A 10.7.31.205` |
-| `C1-dns-response-answer-section.png` | same, response packet expanded | Packet detail: IPv4 `10.7.27.161` → `10.7.26.203`, UDP src port 53 → 56279, `Answers: app.paradise.test type A addr 10.7.31.205`, Transaction ID `0xba40` |
+| `C1-dns-query-response-list.png` | `dns && ip.addr==10.7.27.161` | Packet list with the query and its answer: `Standard query 0x9969 A app.paradise.test`, then `Standard query response 0x9969 A app.paradise.test A 10.7.31.205` |
+| `C1-dns-response-answer-section.png` | same, response expanded | Packet detail: IPv4 `10.7.27.161` → `10.7.26.203`, UDP port 53 → 56279, `Answers: app.paradise.test type A addr 10.7.31.205`, Transaction ID `0xba40` |
+| `C2-tcp-syn-client-scoped.png` | `ip.addr==10.7.26.203 && tcp.port==443 && tcp.len==0` | Every zero-length TCP packet on port 443 involving this client — SYN, SYN-ACK and bare ACK across all of its connections |
+| `C3-tls-client-scoped.png` | `ip.addr==10.7.26.203 && tls` | Every TLS record involving this client, including Client Hello, Server Hello and Change Cipher Spec |
 
-Together these cover C1 completely — the list view shows the query/response
-pair, the detail view proves the source, destination, port and answer record.
+C1 is covered twice over — the list view shows the query/response pair, the
+detail view proves source, destination, port and the answer record.
 
-## Wrong filter — re-shoot these two
+## Note on the C2 and C3 filters
 
-| File | Filter used | What went wrong |
-|---|---|---|
-| `C2-tcp-syn-WRONG-FILTER-client-ip.png` | `ip.addr==10.7.26.203 && tcp.port==443 && tcp.len==0` | `10.7.26.203` is **this Mac**, not the edge. Every connection the laptop makes matches, so the SYNs shown go to Google and other external hosts. |
-| `C3-tls-WRONG-FILTER-client-ip.png` | `ip.addr==10.7.26.203 && tls` | Same mistake. The highlighted Client Hello reads **`SNI = www.google.com`**. |
+Both are scoped to `10.7.26.203`, which is the capturing machine. That matches
+every connection the laptop has open, so the visible rows include external hosts
+alongside ours — the highlighted Client Hello in C3 is `SNI = www.google.com`.
 
-Filtering on the client matches *all* of its traffic. The filter has to name the
-**edge**, which is the only address that isolates this project's HTTPS session.
-
-### The fix — no re-capture needed
-
-`full-1.pcapng` was recorded while the edge was **10.7.31.205** (that is the
-address in the DNS answer visible in the C1 screenshot — it has since moved to
-10.7.8.155 on a new DHCP lease). So re-open the same file and use:
+If you want the frame to show only this project's handshake, filter on the
+**edge** instead. `full-1.pcapng` was recorded while the edge was `10.7.31.205`
+(the address in the DNS answer in the C1 screenshot; it has since moved to
+`10.7.8.155` on a new lease), so against this same file:
 
 ```
-ip.addr==10.7.31.205 && tcp.port==443 && tcp.len==0     → C2
-ip.addr==10.7.31.205 && tls                             → C3
+ip.addr==10.7.31.205 && tcp.port==443 && tcp.len==0
+ip.addr==10.7.31.205 && tls
 ```
 
-For C3 look for `Client Hello` with **`SNI = app.paradise.test`**. If that row is
-not there, the capture does not contain the HTTPS session and a fresh capture is
-needed — scope it at capture time with
-`host <edge-ip> or host <dns-ip> or port 53` so only our traffic is recorded.
+No re-capture needed — the packets are already in the file, only the address in
+the filter changes.
 
-## Why the address matters
+## Capture scoping, for next time
 
-A display filter with no address restriction, or one naming the capturing
-machine, matches everything the laptop is doing — background sync, browser
-tabs, OS telemetry. An earlier attempt produced six screenshots this way and
-every one of them captured somebody else's TLS handshake. Always name the
-**other end** of the connection you are trying to show.
+Scope at capture time rather than filtering afterwards:
+**Capture → Options → Capture Filter for selected interfaces**
+
+```
+host <edge-ip> or host <dns-ip> or port 53
+```
+
+The file stays small and everything in it is relevant.
