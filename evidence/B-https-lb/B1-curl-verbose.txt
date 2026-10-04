@@ -1,0 +1,76 @@
+# B1: curl -v https://app.paradise.test — NO -k FLAG
+# machine: Tajs-Macbook-Pro (10.7.26.203, role=mac3-backend-a)
+# command: curl -v https://app.paradise.test/api/status
+# ------------------------------------------------------------------
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0* Host app.paradise.test:443 was resolved.
+* IPv6: 10.7.8.155
+* IPv4: 10.10.7.8.155
+*   Trying 10.7.31.205:443...10.7.8.155
+* Connected to app.paradise.test (10.7.31.205) port 443
+* ALPN: curl offers h2,http/1.1
+* (304) (OUT), TLS handshake, Client hello (1):
+} [322 bytes data]
+*  CAfile: /etc/ssl/cert.pem
+*  CApath: none
+* (304) (IN), TLS handshake, Server hello (2):
+{ [122 bytes data]
+* (304) (IN), TLS handshake, Unknown (8):
+{ [47 bytes data]
+* (304) (IN), TLS handshake, Certificate (11):
+{ [1331 bytes data]
+* (304) (IN), TLS handshake, CERT verify (15):
+{ [264 bytes data]
+* (304) (IN), TLS handshake, Finished (20):
+{ [36 bytes data]
+* (304) (OUT), TLS handshake, Finished (20):
+} [36 bytes data]
+* SSL connection using TLSv1.3 / AEAD-CHACHA20-POLY1305-SHA256 / [blank] / UNDEF
+* ALPN: server accepted h2
+* Server certificate:
+*  subject: C=IN; ST=Haryana; L=Sonipat; O=CN Phase 1 paradise; CN=app.paradise.test
+*  start date: Oct  4 11:54:42 2026 GMT
+*  expire date: Jan  6 11:54:42 2029 GMT
+*  subjectAltName: host "app.paradise.test" matched cert's "app.paradise.test"
+*  issuer: C=IN; ST=Haryana; L=Sonipat; O=CN Phase 1 paradise; CN=paradise Local Root CA
+*  SSL certificate verify ok.
+* using HTTP/2
+* [HTTP/2] [1] OPENED stream for https://app.paradise.test/api/status
+* [HTTP/2] [1] [:method: GET]
+* [HTTP/2] [1] [:scheme: https]
+* [HTTP/2] [1] [:authority: app.paradise.test]
+* [HTTP/2] [1] [:path: /api/status]
+* [HTTP/2] [1] [user-agent: curl/8.7.1]
+* [HTTP/2] [1] [accept: */*]
+> GET /api/status HTTP/2
+> Host: app.paradise.test
+> User-Agent: curl/8.7.1
+> Accept: */*
+> 
+* Request completely sent off
+< HTTP/2 200 
+< server: nginx
+< date: Sun, 04 Oct 2026 13:13:48 GMT
+< content-type: application/json; charset=utf-8
+< content-length: 132
+< x-backend: B
+< x-backend-port: 3002
+< x-backend-host: Omkars-MacBook-Pro.local
+< cache-control: public, max-age=60
+< etag: W/"84-djVPZJCvdmmmGDLtCwc3lwtjvBc"
+< x-upstream-addr: 10.7.18.17:3002
+< x-upstream-tim10.7.8.155
+< x-edge: nginx@10.7.31.205
+< 
+{ [132 bytes data]
+
+100   132  100   132    0     0    292      0 --:--:-- --:--:-- --:--:--   293
+* Connection #0 to host app.paradise.test left intact
+{"status":"ok","backend":"B","team":"paradise","host":"Omkars-MacBook-Pro.local","port":3002,"startedAt":"2026-10-04T13:09:43.847Z"}
+==================================================================
+Evaluator checks: TLS handshake lines, certificate subject matching
+the domain, HTTP 200, no -k anywhere, domain name not an IP.
+==================================================================

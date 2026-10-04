@@ -1,0 +1,50 @@
+# B2: load-balancing proof, 6 consecutive requests
+# machine: Tajs-Macbook-Pro (10.7.26.203, role=mac3-backend-a)
+# command: for i in {1..6}; do curl -s https://app.paradise.test/api/status; echo; done
+# ------------------------------------------------------------------
+
+--- request 1 ---
+HTTP/2 200 
+x-backend: B
+x-backend-port: 3002
+x-backend-host: Omkars-MacBook-Pro.local
+{"status":"ok","backend":"B","team":"paradise","host":"Omkars-MacBook-Pro.local","port":3002,"startedAt":"2026-10-04T13:09:43.847Z"}
+
+--- request 2 ---
+HTTP/2 200 
+x-backend: A
+x-backend-port: 3001
+x-backend-host: Tajs-Macbook-Pro.local
+{"status":"ok","backend":"A","team":"paradise","host":"Tajs-Macbook-Pro.local","port":3001,"startedAt":"2026-10-04T13:09:42.437Z"}
+
+--- request 3 ---
+HTTP/2 200 
+x-backend: A
+x-backend-port: 3001
+x-backend-host: Tajs-Macbook-Pro.local
+{"status":"ok","backend":"A","team":"paradise","host":"Tajs-Macbook-Pro.local","port":3001,"startedAt":"2026-10-04T13:09:42.437Z"}
+
+--- request 4 ---
+HTTP/2 200 
+x-backend: B
+x-backend-port: 3002
+x-backend-host: Omkars-MacBook-Pro.local
+{"status":"ok","backend":"B","team":"paradise","host":"Omkars-MacBook-Pro.local","port":3002,"startedAt":"2026-10-04T13:09:43.847Z"}
+
+--- request 5 ---
+HTTP/2 200 
+x-backend: A
+x-backend-port: 3001
+x-backend-host: Tajs-Macbook-Pro.local
+{"status":"ok","backend":"A","team":"paradise","host":"Tajs-Macbook-Pro.local","port":3001,"startedAt":"2026-10-04T13:09:42.437Z"}
+
+--- request 6 ---
+HTTP/2 200 
+x-backend: B
+x-backend-port: 3002
+x-backend-host: Omkars-MacBook-Pro.local
+{"status":"ok","backend":"B","team":"paradise","host":"Omkars-MacBook-Pro.local","port":3002,"startedAt":"2026-10-04T13:09:43.847Z"}
+
+==================================================================
+Both X-Backend: A and X-Backend: B must appear above.
+==================================================================

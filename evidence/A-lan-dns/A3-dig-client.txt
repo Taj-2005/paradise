@@ -1,0 +1,53 @@
+# A3: dig app.paradise.test from a CLIENT machine
+# machine: Tajs-Macbook-Pro (10.7.26.203, role=mac3-backend-a)
+# command: dig app.paradise.test
+# ------------------------------------------------------------------
+
+
+; <<>> DiG 9.10.6 <<>> app.paradise.test
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 16962
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;app.paradise.test.		IN	A
+
+;; ANSWER SECTION:
+app.paradise.test.	0	IN	A	10.7.8.155
+
+;; Query time: 92 msec
+;; SERVER: 10.7.27.161#53(10.7.27.161)
+;; WHEN: Sun Oct 04 18:43:38 IST 2026
+;; MSG SIZE  rcvd: 62
+
+
+==================================================================
+Evaluator checks:
+  ANSWER SECTION shows the edge IP    -> expecting 10.7.8.155
+  SERVER line shows OUR DNS server    -> expecting 10.7.27.161
+==================================================================
+
+$ dig api.paradise.test
+
+; <<>> DiG 9.10.6 <<>> api.paradise.test
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 58450
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;api.paradise.test.		IN	A
+
+;; ANSWER SECTION:
+api.paradise.test.	0	IN	A	10.7.8.155
+
+;; Query time: 11 msec
+;; SERVER: 10.7.27.161#53(10.7.27.161)
+;; WHEN: Sun Oct 04 18:43:38 IST 2026
+;; MSG SIZE  rcvd: 62
+

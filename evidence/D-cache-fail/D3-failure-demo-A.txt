@@ -1,0 +1,8 @@
+=== D3 Failure demo — Option A: stop one backend ===
+
+BEFORE (6 requests): BAABAB
+ACTION: stopped the Backend A process on Mac 3 (10.7.26.203:3001)
+AFTER  (6 requests): BBBBBB
+HTTP codes after:    200 200 200 200 200 200
+LAYER: application — DNS, TCP and TLS all unaffected
+RESTORED (6 requests): BBBBBB

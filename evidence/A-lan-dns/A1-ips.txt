@@ -1,0 +1,28 @@
+# A1: Machine IPs, roles and interfaces
+# machine: Tajs-Macbook-Pro (10.7.26.203, role=mac3-backend-a)
+# command: ifconfig / ipconfig
+# ------------------------------------------------------------------
+
+ROLE                   PRIVATE IPv4     IFACE  NOTE
+Mac 1 / DNS server     10.7.27.161      en0    dnsmasq, test client
+Mac 2 / Edge nginx     10.7.8.155      en0    TLS termination, load balancer
+Mac 3 / Backend A      10.7.26.203      en0    port 3001
+Mac 4 / Backend B      10.7.18.17       en0    port 3002, test client
+
+--- full detail for THIS machine (Tajs-Macbook-Pro) ---
+$ ipconfig getifaddr en0
+10.7.26.203
+
+$ ifconfig en0
+en0: flags=8963<UP,BROADCAST,SMART,RUNNING,PROMISC,SIMPLEX,MULTICAST> mtu 1500
+	options=6460<TSO4,TSO6,CHANNEL_IO,PARTIAL_CSUM,ZEROINVERT_CSUM>
+	ether 96:2f:84:6f:cd:9c
+	inet 10.7.26.203 netmask 0xffffe000 broadcast 10.7.31.255
+	media: autoselect
+	status: active
+
+$ route -n get default | grep gateway
+    gateway: 10.7.0.1
+
+NOTE: run this script on all four Macs and merge the per-machine
+sections, so every machine's real interface detail is captured.

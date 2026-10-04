@@ -1,0 +1,11 @@
+=== D3 Failure demo — Option C: wrong destination port ===
+
+BEFORE: curl https://app.paradise.test/api/status -> HTTP 200
+ACTION: curl https://app.paradise.test:9999/api/status
+AFTER:
+  *   Trying 10.7.8.155:9999...
+  * connect to 10.7.8.155 port 9999 from 10.7.26.203 port 54415 failed: Connection refused
+  * Failed to connect to app.paradise.test port 9999 after 366 ms: Couldn't connect to server
+        ping 10.7.8.155: 0.0% packet loss  <- host reachable, port is not
+LAYER:  transport (TCP). Host reached; no listener on :9999 -> RST.
+RESTORED: no state was changed.
