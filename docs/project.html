@@ -3,330 +3,113 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Team paradise — CN Phase 1 · Private Network Service Platform</title>
-<meta name="description" content="Computer Networks (CSA223) Phase 1 submission by Team paradise — a four-machine private network with its own DNS zone, TLS-terminating nginx edge, and two load-balanced REST backends.">
+<title>Team paradise — CN Phase 1</title>
+<meta name="description" content="Title card for the CN Phase 1 demo video — team paradise.">
 <style>
 :root{
-  --bg:#ffffff; --bg-2:#f6f8fb; --bg-3:#eef2f7;
-  --fg:#0f172a; --fg-2:#475569; --fg-3:#64748b;
-  --line:#dde3ec; --line-2:#c7d0dc;
-  --accent:#2563eb; --accent-fg:#ffffff;
-  --dns:#7c3aed; --edge:#2563eb; --ba:#0d9488; --bb:#ca8a04;
-  --ok:#0f766e; --ok-bg:#f0fdfa;
+  --bg:#0b1220; --panel:#131f33; --line:#24344d;
+  --fg:#e9f0fa; --fg-2:#a9b9cd; --fg-3:#7e90a8;
+  --dns:#a78bfa; --edge:#5b9dff; --ba:#2dd4bf; --bb:#eab308;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
-  --radius:12px; --maxw:1080px;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Helvetica,sans-serif;
 }
-@media (prefers-color-scheme:dark){
-  :root{
-    --bg:#0b1220; --bg-2:#111a2b; --bg-3:#16233a;
-    --fg:#e6edf6; --fg-2:#a9b6c8; --fg-3:#8496ab;
-    --line:#233248; --line-2:#2e4159;
-    --accent:#5b9dff; --accent-fg:#06101f;
-    --dns:#a78bfa; --edge:#5b9dff; --ba:#2dd4bf; --bb:#eab308;
-    --ok:#2dd4bf; --ok-bg:#0c2725;
-  }
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #17263f 0%, transparent 60%),
+    var(--bg);
+  color:var(--fg); font-family:var(--sans);
+  display:grid; place-items:center; overflow:hidden;
+  padding:clamp(1rem,3vh,2.5rem) clamp(1rem,4vw,3rem);
 }
-*{box-sizing:border-box}
-html{scroll-behavior:smooth;scroll-padding-top:4.5rem}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 var(--sans);-webkit-text-size-adjust:100%}
-.wrap{max-width:var(--maxw);margin:0 auto;padding:0 1.25rem}
-a{color:var(--accent)}
+.card{width:100%; max-width:1600px; display:flex; flex-direction:column;
+      gap:clamp(1rem,4.2vh,3rem); text-align:center}
 
-header.top{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);
-  backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-.topin{max-width:var(--maxw);margin:0 auto;padding:.7rem 1.25rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
-.brand{font-weight:700;margin-right:auto;font-size:1rem;letter-spacing:-.01em}
-.brand span{color:var(--fg-3);font-weight:500}
-nav.top a{color:var(--fg-2);text-decoration:none;font-size:.85rem;padding:.3rem .55rem;border-radius:7px;white-space:nowrap}
-nav.top a:hover{background:var(--bg-3);color:var(--fg)}
+.eyebrow{font:600 clamp(.75rem,1.9vh,1.3rem)/1 var(--mono); letter-spacing:.24em;
+         text-transform:uppercase; color:var(--edge)}
+h1{font-size:clamp(2rem,8.4vh,6.2rem); line-height:1.02; letter-spacing:-.03em; font-weight:800}
+.team{font-size:clamp(1.05rem,3.4vh,2.4rem); color:var(--fg-2); font-weight:500}
+.team b{color:var(--fg); font-weight:800; letter-spacing:-.01em}
 
-.hero{padding:3rem 0 1.5rem;border-bottom:1px solid var(--line)}
-.eyebrow{font:600 .78rem/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:.9rem}
-h1{font-size:clamp(1.9rem,5.5vw,3rem);line-height:1.1;letter-spacing:-.03em;margin:0 0 .5rem}
-.teamline{font-size:clamp(1.05rem,2.6vw,1.3rem);color:var(--fg-2);margin:0 0 1.3rem}
-.teamline b{color:var(--fg)}
-.pills{display:flex;gap:.45rem;flex-wrap:wrap;margin-bottom:1.5rem}
-.pill{font:600 .73rem/1 var(--mono);padding:.42rem .65rem;border-radius:999px;border:1px solid var(--line-2);color:var(--fg-2);background:var(--bg-2)}
-.cta{display:flex;gap:.6rem;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;gap:.45rem;background:var(--accent);color:var(--accent-fg);
-  text-decoration:none;padding:.6rem 1rem;border-radius:9px;font-weight:600;font-size:.9rem;border:1px solid var(--accent)}
-.btn.ghost{background:transparent;color:var(--fg);border-color:var(--line-2)}
-.btn:hover{opacity:.9}
+.members{display:grid; grid-template-columns:repeat(4,1fr); gap:clamp(.6rem,1.5vw,1.5rem)}
+@media (max-width:820px){ .members{grid-template-columns:repeat(2,1fr)} }
+.m{background:var(--panel); border:1px solid var(--line); border-top:4px solid var(--c);
+   border-radius:16px; padding:clamp(.8rem,3.1vh,2.1rem) clamp(.5rem,1.2vw,1.3rem)}
+.m.dns{--c:var(--dns)} .m.edge{--c:var(--edge)} .m.ba{--c:var(--ba)} .m.bb{--c:var(--bb)}
+.m .nm{font-size:clamp(1rem,2.9vh,2rem); font-weight:700; letter-spacing:-.01em; line-height:1.15}
+.m .id{font:600 clamp(.7rem,1.75vh,1.2rem)/1.4 var(--mono); color:var(--fg-3); margin-top:.15rem}
+.m .role{font-size:clamp(.82rem,2.2vh,1.5rem); font-weight:700; color:var(--c);
+         margin-top:clamp(.4rem,1.6vh,1.1rem)}
+.m .ip{font:clamp(.68rem,1.7vh,1.15rem)/1.45 var(--mono); color:var(--fg-3); margin-top:.1rem}
 
-h2{font-size:1.45rem;letter-spacing:-.02em;margin:2.75rem 0 .3rem;padding-top:.5rem}
-h3{font-size:1.02rem;margin:1.5rem 0 .4rem}
-.lede{color:var(--fg-2);margin:0 0 1rem}
+.flow{display:flex; align-items:center; justify-content:center; flex-wrap:wrap;
+      gap:clamp(.35rem,1.1vw,1.1rem); font:600 clamp(.75rem,2.1vh,1.45rem) var(--mono);
+      background:var(--panel); border:1px solid var(--line); border-radius:12px;
+      padding:clamp(.7rem,2.4vh,1.6rem) clamp(.7rem,2vw,1.8rem); color:var(--fg-2)}
+.flow .n{color:var(--fg)} .flow .ar{color:var(--fg-3)}
+.flow .t{color:var(--edge)} .flow .a{color:var(--ba)} .flow .b{color:var(--bb)}
 
-.grid{display:grid;gap:1rem}
-@media(min-width:760px){.grid.c2{grid-template-columns:1fr 1fr}.grid.c4{grid-template-columns:repeat(4,1fr)}}
-@media(min-width:500px) and (max-width:759px){.grid.c4,.grid.c2{grid-template-columns:1fr 1fr}}
+.foot{display:flex; justify-content:center; align-items:center; flex-wrap:wrap;
+      gap:clamp(.5rem,2.2vw,2.4rem); font-size:clamp(.75rem,1.95vh,1.3rem); color:var(--fg-3)}
+.foot b{color:var(--fg-2); font-weight:600}
+.repo{font-family:var(--mono); color:var(--edge); font-weight:600; text-decoration:none}
+.repo:hover{text-decoration:underline}
 
-.card{border:1px solid var(--line);border-radius:var(--radius);padding:1rem 1.1rem;background:var(--bg-2)}
-.member{border-left:4px solid var(--line-2)}
-.member.dns{border-left-color:var(--dns)} .member.edge{border-left-color:var(--edge)}
-.member.ba{border-left-color:var(--ba)}   .member.bb{border-left-color:var(--bb)}
-.member .enr{font:600 .76rem var(--mono);color:var(--fg-3);letter-spacing:.03em}
-.member .nm{font-weight:700;font-size:1.05rem;margin:.15rem 0 .1rem;letter-spacing:-.01em}
-.member .gh{font:.82rem var(--mono)}
-.member .rl{margin-top:.6rem;padding-top:.6rem;border-top:1px solid var(--line);font-size:.86rem;color:var(--fg-2)}
-.member .rl b{color:var(--fg);display:block;font-size:.9rem}
-.member .ip{font:.78rem var(--mono);color:var(--fg-3);margin-top:.2rem}
-
-.tablewrap{overflow-x:auto;margin:1rem 0;border:1px solid var(--line);border-radius:var(--radius)}
-table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:540px}
-th,td{text-align:left;padding:.58rem .8rem;border-bottom:1px solid var(--line);vertical-align:top}
-thead th{background:var(--bg-3);font-weight:600;font-size:.76rem;text-transform:uppercase;letter-spacing:.05em;color:var(--fg-2)}
-tbody tr:last-child td{border-bottom:0}
-tbody tr:hover{background:var(--bg-2)}
-td code,th code{font:.85em var(--mono);background:var(--bg-3);padding:.1em .35em;border-radius:4px;border:1px solid var(--line);white-space:nowrap}
-
-dl.meta{display:grid;grid-template-columns:auto 1fr;gap:.45rem 1.1rem;margin:0;font-size:.93rem}
-dl.meta dt{color:var(--fg-3);font-weight:500}
-dl.meta dd{margin:0;font-weight:600}
-
-figure{margin:1.25rem 0}
-.dia{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg);padding:.5rem}
-.dia.dk{display:none}
-@media (prefers-color-scheme:dark){ .dia.lt{display:none} .dia.dk{display:block} }
-figcaption{color:var(--fg-3);font-size:.83rem;margin-top:.5rem;text-align:center}
-
-.flow{list-style:none;counter-reset:f;padding:0;margin:1rem 0}
-.flow li{counter-increment:f;position:relative;padding-left:2.5rem;margin-bottom:1rem}
-.flow li::before{content:counter(f);position:absolute;left:0;top:.05rem;width:1.75rem;height:1.75rem;border-radius:50%;
-  background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font:700 .82rem var(--mono)}
-.flow b{display:block;margin-bottom:.1rem}
-.flow span{font-size:.9rem;color:var(--fg-2)}
-
-.note{background:var(--bg-3);border:1px solid var(--line-2);border-radius:var(--radius);padding:.8rem 1rem;margin:1rem 0;font-size:.92rem}
-.good{background:var(--ok-bg);border:1px solid var(--ok);border-radius:var(--radius);padding:.8rem 1rem;margin:1rem 0;font-size:.92rem}
-.note p:first-child,.good p:first-child{margin-top:0} .note p:last-child,.good p:last-child{margin-bottom:0}
-
-footer{margin-top:3.5rem;border-top:1px solid var(--line);padding:2rem 0 3rem;color:var(--fg-3);font-size:.88rem}
-
-@media print{
-  header.top,nav.top,.cta{display:none!important}
-  body{background:#fff;color:#000;font-size:10.5pt}
-  .card,.tablewrap,figure{break-inside:avoid}
-  .dia.dk{display:none!important} .dia.lt{display:block!important}
-  a{color:#000;text-decoration:underline}
-  h2{break-after:avoid}
-}
+@media print{ body{background:#fff;color:#000} .m,.flow{background:#f4f6fa;border-color:#ccc} }
 </style>
 </head>
 <body>
+<div class="card">
 
-<header class="top">
-  <div class="topin">
-    <div class="brand">Team paradise <span>· CN Phase 1</span></div>
-    <nav class="top">
-      <a href="#team">Team</a><a href="#project">Project</a><a href="#infra">Infrastructure</a>
-      <a href="#built">What we built</a><a href="#links">Links</a>
-    </nav>
+  <div>
+    <div class="eyebrow">Computer Networks · CSA223 · Phase 1 — Build &amp; Observe</div>
+    <h1 style="margin-top:.35em">Private Network Service Platform</h1>
   </div>
-</header>
 
-<main class="wrap">
+  <div class="team">Team <b>paradise</b> · four macOS laptops · one private LAN</div>
 
-<section class="hero">
-  <div class="eyebrow">Computer Networks · CSA223 · Phase 1 — Build &amp; Observe</div>
-  <h1>Private Network Service Platform</h1>
-  <p class="teamline">Team <b>paradise</b> — four macOS laptops, one private LAN, a DNS zone and
-  TLS edge we built and operate ourselves.</p>
-  <div class="pills">
-    <span class="pill">dnsmasq</span><span class="pill">nginx</span><span class="pill">TLS 1.3</span>
-    <span class="pill">round robin</span><span class="pill">Node · Express</span>
-    <span class="pill">OpenSSL</span><span class="pill">Wireshark</span>
+  <div class="members">
+    <div class="m dns">
+      <div class="nm">Nipun</div>
+      <div class="id">2401010323</div>
+      <div class="role">Private DNS</div>
+      <div class="ip">dnsmasq · 10.7.27.161</div>
+    </div>
+    <div class="m edge">
+      <div class="nm">Anushka</div>
+      <div class="id">2401010090</div>
+      <div class="role">Edge · TLS · LB</div>
+      <div class="ip">nginx · 10.7.31.205</div>
+    </div>
+    <div class="m ba">
+      <div class="nm">Tajuddin Shaik</div>
+      <div class="id">2401010436</div>
+      <div class="role">Backend A</div>
+      <div class="ip">express · 10.7.26.203:3001</div>
+    </div>
+    <div class="m bb">
+      <div class="nm">Omkar Hadole</div>
+      <div class="id">2401010175</div>
+      <div class="role">Backend B</div>
+      <div class="ip">express · 10.7.18.17:3002</div>
+    </div>
   </div>
-  <div class="cta">
-    <a class="btn" href="https://github.com/Taj-2005/paradise">GitHub repository</a>
-    <a class="btn ghost" href="index.html">Setup guide</a>
-    <a class="btn ghost" href="architecture.md">Architecture</a>
-  </div>
-</section>
 
-<section id="team">
-<h2>Team members</h2>
-<p class="lede">Four members, one machine role each. Every member can explain any part of the
-system, not only the component they configured.</p>
+  <div class="flow">
+    <span class="n">app.paradise.test</span>
+    <span class="ar">→</span><span>DNS</span>
+    <span class="ar">→</span><span class="t">HTTPS · TLS 1.3</span>
+    <span class="ar">→</span><span>nginx</span>
+    <span class="ar">→</span><span class="a">Backend A</span><span class="ar">|</span><span class="b">Backend B</span>
+  </div>
 
-<div class="grid c4">
-  <div class="card member dns">
-    <div class="enr">2401010323</div>
-    <div class="nm">Nipun</div>
-    <div class="gh"><a href="https://github.com/nipun1803">@nipun1803</a></div>
-    <div class="rl"><b>Mac 1 · Private DNS</b>
-      dnsmasq, authoritative zone, resolver config
-      <div class="ip">10.7.27.161 · UDP/TCP 53</div></div>
+  <div class="foot">
+    <span><b>Type 1</b> — 4 physical macOS laptops on one LAN</span>
+    <a class="repo" href="https://github.com/Taj-2005/paradise">github.com/Taj-2005/paradise</a>
+    <span>BTech CS&amp;AI / CS&amp;DS · Batch 2024 · NST</span>
   </div>
-  <div class="card member edge">
-    <div class="enr">2401010090</div>
-    <div class="nm">Anushka</div>
-    <div class="gh"><a href="https://github.com/anu-ushka">@anu-ushka</a></div>
-    <div class="rl"><b>Mac 2 · Edge</b>
-      nginx, TLS termination, load balancing
-      <div class="ip">10.7.31.205 · 80 / 443</div></div>
-  </div>
-  <div class="card member ba">
-    <div class="enr">2401010436</div>
-    <div class="nm">Tajuddin Shaik</div>
-    <div class="gh"><a href="https://github.com/Taj-2005">@Taj-2005</a></div>
-    <div class="rl"><b>Mac 3 · Backend A</b>
-      REST service, HTTP caching, repo tooling
-      <div class="ip">10.7.26.203 · 3001</div></div>
-  </div>
-  <div class="card member bb">
-    <div class="enr">2401010175</div>
-    <div class="nm">Omkar Hadole</div>
-    <div class="gh"><a href="https://github.com/omkar-hadole">@omkar-hadole</a></div>
-    <div class="rl"><b>Mac 4 · Backend B</b>
-      REST service, verification, packet capture
-      <div class="ip">10.7.18.17 · 3002</div></div>
-  </div>
+
 </div>
-</section>
-
-<section id="project">
-<h2>Project details</h2>
-<div class="grid c2">
-  <div class="card">
-    <h3 style="margin-top:0">Course</h3>
-    <dl class="meta">
-      <dt>Course</dt><dd>Computer Networks</dd>
-      <dt>Code</dt><dd>CSA223</dd>
-      <dt>Programme</dt><dd>BTech CS &amp; AI · CS &amp; DS</dd>
-      <dt>Batch</dt><dd>2024 — NST</dd>
-      <dt>Semester</dt><dd>5</dd>
-      <dt>Section</dt><dd>&lt;section&gt;</dd>
-    </dl>
-  </div>
-  <div class="card">
-    <h3 style="margin-top:0">Submission</h3>
-    <dl class="meta">
-      <dt>Team</dt><dd>paradise</dd>
-      <dt>Phase</dt><dd>1 — Build &amp; Observe</dd>
-      <dt>Infra type</dt><dd>Type 1 — 4 physical macOS laptops on one LAN</dd>
-      <dt>Domain</dt><dd><code>app.paradise.test</code></dd>
-      <dt>API</dt><dd><code>api.paradise.test</code></dd>
-      <dt>Review 1</dt><dd>50 marks — 40 team + 10 individual viva</dd>
-    </dl>
-  </div>
-</div>
-
-<div class="note"><p><strong>The brief, in one line:</strong> <em>the application stays
-simple — the network is the project.</em> A client types a private domain name, that name is
-resolved by our own DNS server, the connection is secured by a certificate from our own
-certificate authority, and the request is load balanced across two backend machines — with
-packet-level evidence for every layer.</p></div>
-</section>
-
-<section id="infra">
-<h2>Infrastructure</h2>
-
-<figure>
-  <img class="dia lt" src="diagrams/topology-light.svg" alt="Network topology: four machines in one LAN — DNS, edge, and two backends">
-  <img class="dia dk" src="diagrams/topology-dark.svg"  alt="Network topology: four machines in one LAN — DNS, edge, and two backends">
-  <figcaption>Four machines, four roles, one LAN. Numbered arrows follow a single request.</figcaption>
-</figure>
-
-<div class="tablewrap"><table>
-<thead><tr><th>Machine</th><th>Role</th><th>Service</th><th>Address</th><th>Cloud equivalent</th></tr></thead>
-<tbody>
-<tr><td>Mac 1</td><td>Private DNS</td><td>dnsmasq</td><td><code>10.7.27.161:53</code></td><td>Route 53 private hosted zone</td></tr>
-<tr><td>Mac 2</td><td>Edge — reverse proxy, LB, TLS</td><td>nginx</td><td><code>10.7.31.205:443</code></td><td>ALB + ACM certificate</td></tr>
-<tr><td>Mac 3</td><td>Backend A</td><td>Node · Express</td><td><code>10.7.26.203:3001</code></td><td>EC2 in a target group</td></tr>
-<tr><td>Mac 4</td><td>Backend B</td><td>Node · Express</td><td><code>10.7.18.17:3002</code></td><td>EC2 in a target group</td></tr>
-</tbody></table></div>
-
-<h3>What happens in one request</h3>
-<ol class="flow">
-  <li><b>DNS — application layer, UDP/53</b>
-    <span>The client asks Mac 1 for <code>app.paradise.test</code> and is given the edge's
-    address. A directory lookup, not a connection — nothing has contacted the edge yet.</span></li>
-  <li><b>TCP — transport layer</b>
-    <span>Three-way handshake from an ephemeral port to <code>10.7.31.205:443</code>.
-    Completes before a single TLS byte is sent.</span></li>
-  <li><b>TLS — session / presentation</b>
-    <span>ClientHello with SNI, ServerHello, key exchange. <strong>TLS terminates at the
-    edge</strong>, using a certificate signed by our own local CA — validated with no
-    <code>-k</code> flag.</span></li>
-  <li><b>HTTP — application layer</b>
-    <span>nginx decrypts and makes a <strong>separate, plaintext</strong> request over its
-    own TCP connection to whichever backend round robin selects. The
-    <code>X-Backend</code> header rides back untouched.</span></li>
-</ol>
-
-<div class="good"><p style="margin:0"><strong>Two connections, not one.</strong> The
-client↔edge leg is encrypted; the edge↔backend leg is plaintext on the trusted LAN, with
-its own ports and its own handshake. That is why a packet capture shows opaque
-<code>Application Data</code> on one side and fully readable HTTP on the other.</p></div>
-</section>
-
-<section id="built">
-<h2>What we built</h2>
-<p class="lede">All seven mandatory Phase 1 tasks, each with terminal evidence.</p>
-
-<div class="tablewrap"><table>
-<thead><tr><th>Task</th><th>Requirement</th><th>How we did it</th></tr></thead>
-<tbody>
-<tr><td><b>A</b></td><td>Private LAN</td><td>Four Macs on one <code>/19</code>, full ping matrix, topology diagram</td></tr>
-<tr><td><b>B</b></td><td>Private DNS</td><td>dnsmasq authoritative for <code>*.paradise.test</code>, forwarding everything else upstream</td></tr>
-<tr><td><b>C</b></td><td>Two backends</td><td>One Express codebase, two instances differing only by environment; every response carries <code>X-Backend</code></td></tr>
-<tr><td><b>D</b></td><td>Reverse proxy + LB</td><td>nginx round robin with passive health checks, so a stopped backend never surfaces a 502</td></tr>
-<tr><td><b>E</b></td><td>HTTPS / TLS</td><td>Local CA, leaf certificate with a SAN, trusted on every Mac — demonstrated without <code>-k</code></td></tr>
-<tr><td><b>F</b></td><td>HTTP caching</td><td><code>Cache-Control: max-age=60</code> + <code>ETag</code>, with a deterministic <code>304 Not Modified</code></td></tr>
-<tr><td><b>G</b></td><td>Packet evidence</td><td>Wireshark captures of the DNS query, the TCP handshake and the TLS handshake</td></tr>
-</tbody></table></div>
-
-<div class="note"><p><strong>One design decision worth reading about.</strong>
-<code>/api/status</code> must name the backend that answered, so our two replicas compute
-<em>different ETags for the same resource</em>. Behind round robin that makes conditional
-requests non-deterministic — a 304 only about half the time. We added
-<code>/api/cacheable</code>, whose body is byte-identical on both machines, so revalidation
-always works. Cache validators must agree across replicas, or conditional requests silently
-degrade into full responses.</p></div>
-</section>
-
-<section id="links">
-<h2>Where everything lives</h2>
-<div class="tablewrap"><table>
-<thead><tr><th>Item</th><th>Location</th></tr></thead>
-<tbody>
-<tr><td>Repository</td><td><a href="https://github.com/Taj-2005/paradise">github.com/Taj-2005/paradise</a></td></tr>
-<tr><td>Setup guide — per machine</td><td><a href="index.html">docs/index.html</a></td></tr>
-<tr><td>Architecture document</td><td><a href="architecture.md">docs/architecture.md</a></td></tr>
-<tr><td>Request flow, layer by layer</td><td><a href="request-flow.md">docs/request-flow.md</a></td></tr>
-<tr><td>OSI / TCP-IP mapping</td><td><a href="osi-tcpip-mapping.md">docs/osi-tcpip-mapping.md</a></td></tr>
-<tr><td>Runbook — boot order</td><td><a href="runbook.md">docs/runbook.md</a></td></tr>
-<tr><td>Troubleshooting</td><td><a href="troubleshooting.md">docs/troubleshooting.md</a></td></tr>
-<tr><td>IP &amp; service inventory</td><td><a href="ip-inventory.md">docs/ip-inventory.md</a></td></tr>
-<tr><td>Evidence, indexed by form field</td><td><a href="../evidence/README.md">evidence/README.md</a></td></tr>
-<tr><td>Backend source</td><td><a href="../services/backend/README.md">services/backend/</a></td></tr>
-<tr><td>Demo recording</td><td>&lt;Google Drive link&gt;</td></tr>
-</tbody></table></div>
-
-<h3>Running it</h3>
-<div class="tablewrap"><table>
-<thead><tr><th>Machine</th><th>Command</th></tr></thead>
-<tbody>
-<tr><td>Mac 3 · Backend A</td><td><code>make backend-a</code></td></tr>
-<tr><td>Mac 4 · Backend B</td><td><code>make backend-b</code></td></tr>
-<tr><td>Mac 2 · Edge</td><td><code>make edge</code></td></tr>
-<tr><td>Mac 1 · DNS</td><td><code>make dns</code></td></tr>
-<tr><td>Every machine</td><td><code>make client-dns &amp;&amp; make client-trust</code></td></tr>
-<tr><td>Any client</td><td><code>make verify</code> — the full acceptance test</td></tr>
-</tbody></table></div>
-</section>
-
-<footer>
-  <div class="wrap" style="padding:0">
-    <p><strong>Team paradise</strong> — Nipun (2401010323) · Anushka (2401010090) ·
-    Tajuddin Shaik (2401010436) · Omkar Hadole (2401010175)</p>
-    <p>Computer Networks (CSA223) · BTech CS&amp;AI / CS&amp;DS, Batch 2024 — Newton School of Technology<br>
-    Phase 1: Build &amp; Observe · Infrastructure Type 1 — four physical macOS laptops on one LAN</p>
-    <p style="margin-bottom:0"><a href="https://github.com/Taj-2005/paradise">github.com/Taj-2005/paradise</a></p>
-  </div>
-</footer>
-</main>
 </body>
 </html>

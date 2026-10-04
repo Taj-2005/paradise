@@ -8,7 +8,7 @@ evidence of every protocol layer in a single request.
 
 > *The application stays simple — the network is the project.*
 
-📄 **[Project overview — team, roles, architecture →](docs/project.html)**
+📄 **[Title card — team, roles, addresses at a glance →](docs/project.html)**
 📖 **[Setup guide with copy-paste commands →](docs/index.html)**
 
 (open either in a browser, or view them on GitHub Pages)
