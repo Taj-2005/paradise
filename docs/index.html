@@ -152,11 +152,12 @@ details .body{padding:0 .95rem .95rem;border-top:1px solid var(--line);margin-to
 
 figure{margin:1.5rem 0}
 /* Mermaid renders two variants; CSS picks the one matching the viewer's theme. */
-/* Both diagrams are portrait, so width:100% made them taller than the viewport.
-   Cap the height and let width follow the aspect ratio, centred. */
-.dia{max-width:100%;max-height:min(70vh,620px);width:auto;height:auto;
-  display:block;margin:0 auto;border:1px solid var(--line);
+.dia{width:100%;height:auto;display:block;border:1px solid var(--line);
   border-radius:var(--radius);background:var(--bg);padding:.5rem}
+/* The topology is nearly square (731x877), so at full width it stood taller
+   than the viewport. Cap its height and let the width follow. The request-flow
+   sequence diagram keeps full width — its rows are only legible at that size. */
+.dia-topology{max-width:100%;max-height:min(70vh,620px);width:auto;margin:0 auto}
 .dia.dk{display:none}
 @media (prefers-color-scheme:dark){ .dia.lt{display:none} .dia.dk{display:block} }
 figcaption{color:var(--fg-3);font-size:.83rem;margin-top:.5rem;text-align:center}
@@ -237,8 +238,8 @@ footer{margin-top:4rem;border-top:1px solid var(--line);padding:2rem 0 3rem;colo
 
 <!-- DIAGRAM:topology -->
 <figure>
-  <img class="dia lt" src="diagrams/topology-light.svg" alt="Network topology — Four machines, four roles, one LAN. Numbered arrows follow a single request.">
-  <img class="dia dk" src="diagrams/topology-dark.svg"  alt="Network topology — Four machines, four roles, one LAN. Numbered arrows follow a single request.">
+  <img class="dia dia-topology lt" src="diagrams/topology-light.svg" alt="Network topology — Four machines, four roles, one LAN. Numbered arrows follow a single request.">
+  <img class="dia dia-topology dk" src="diagrams/topology-dark.svg"  alt="Network topology — Four machines, four roles, one LAN. Numbered arrows follow a single request.">
   <figcaption>Four machines, four roles, one LAN. Numbered arrows follow a single request.
     &nbsp;·&nbsp; <a href="diagrams/src/topology.mmd">.mmd</a>
   </figcaption>
@@ -296,8 +297,8 @@ flowchart TB
 
 <!-- DIAGRAM:request-flow -->
 <figure>
-  <img class="dia lt" src="diagrams/request-flow-light.svg" alt="Request flow — One curl, layer by layer: DNS, TCP, TLS, HTTP, and the separate upstream leg.">
-  <img class="dia dk" src="diagrams/request-flow-dark.svg"  alt="Request flow — One curl, layer by layer: DNS, TCP, TLS, HTTP, and the separate upstream leg.">
+  <img class="dia dia-request-flow lt" src="diagrams/request-flow-light.svg" alt="Request flow — One curl, layer by layer: DNS, TCP, TLS, HTTP, and the separate upstream leg.">
+  <img class="dia dia-request-flow dk" src="diagrams/request-flow-dark.svg"  alt="Request flow — One curl, layer by layer: DNS, TCP, TLS, HTTP, and the separate upstream leg.">
   <figcaption>One curl, layer by layer: DNS, TCP, TLS, HTTP, and the separate upstream leg.
     &nbsp;·&nbsp; <a href="diagrams/src/request-flow.mmd">.mmd</a>
   </figcaption>

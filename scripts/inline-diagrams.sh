@@ -52,8 +52,8 @@ for name, (title, caption) in CAPS.items():
     mmd = open(f"{dpath}/src/{name}.mmd", encoding="utf-8").read().strip()
     block = f'''<!-- DIAGRAM:{name} -->
 <figure>
-  <img class="dia lt" src="diagrams/{name}-light.svg" alt="{html.escape(title)} — {html.escape(caption)}">
-  <img class="dia dk" src="diagrams/{name}-dark.svg"  alt="{html.escape(title)} — {html.escape(caption)}">
+  <img class="dia dia-{name} lt" src="diagrams/{name}-light.svg" alt="{html.escape(title)} — {html.escape(caption)}">
+  <img class="dia dia-{name} dk" src="diagrams/{name}-dark.svg"  alt="{html.escape(title)} — {html.escape(caption)}">
   <figcaption>{html.escape(caption)}
     &nbsp;·&nbsp; <a href="diagrams/src/{name}.mmd">.mmd</a>
   </figcaption>
