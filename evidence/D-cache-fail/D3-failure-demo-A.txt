@@ -5,4 +5,4 @@ ACTION: stopped the Backend A process on Mac 3 (10.7.26.203:3001)
 AFTER  (6 requests): BBBBBB
 HTTP codes after:    200 200 200 200 200 200
 LAYER: application — DNS, TCP and TLS all unaffected
-RESTORED (6 requests): BBBBBB
+RESTORED (6 requests): BAABBA
