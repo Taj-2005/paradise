@@ -17,24 +17,19 @@ obvious when filling in Section C.
 | `C3-tls-clienthello-sni.png`     | `ip.addr==10.7.8.155 && tls`                         | Client Hello with **SNI = app.paradise.test**                  |
 | `C3-tls-serverhello-cipher.png`  | same                                                 | Server Hello with the negotiated cipher suite                  |
 
-## `_not-usable/` — why those six were rejected
+## Why there is only one screenshot so far
 
-They capture this laptop's **background internet traffic**, not the paradise
-network. The display filters (`tcp.flags.syn==1`, `tls`) were correct, but with
-no address restriction they matched every connection the Mac was making:
+A first attempt produced six more, but every one of them captured this laptop's
+**background internet traffic** rather than the paradise network. The display
+filters (`tcp.flags.syn==1`, `tls`) were right, but applied to a capture of
+everything on `en0` with no address restriction, so they matched Google,
+Microsoft and Apple connections — one Client Hello had
+`SNI = peoplestack-pa.clients6.google.com`. The capture held 50,760 packets, of
+which 7,296 matched `tls`, almost all of it noise.
 
-| File                                   | Destination                       | Problem                                             |
-| -------------------------------------- | --------------------------------- | --------------------------------------------------- |
-| `tcp-syn-list-external-hosts-only.png` | `142.251.x`, `51.132.x`, `17.8.x` | Google, Microsoft, Apple — our edge appears nowhere |
-| `tcp-syn-detail-dst-microsoft.png`     | `51.132.193.109`                  | Microsoft, not `10.7.8.155`                         |
-| `tls-list-google-traffic.png`          | `142.250.x`                       | Google                                              |
-| `tls-list-google-serverhello.png`      | `142.250.183.234`                 | Google                                              |
-| `tls-clienthello-sni-google.png`       | `142.250.183.234`                 | **SNI = peoplestack-pa.clients6.google.com**        |
-| `tls-serverhello-dst-google.png`       | `142.250.183.234`                 | Google                                              |
-
-The capture held **50,760 packets**, of which 7,296 matched `tls` — almost all
-of it noise. Submitting these would show an evaluator a TLS handshake with
-Google, which proves nothing about this project.
+Those files were deleted rather than kept: they prove nothing about this
+project, and 4.6 MB of screenshots of somebody else's TLS handshakes does not
+belong in a submission.
 
 ## How to avoid it when re-capturing
 

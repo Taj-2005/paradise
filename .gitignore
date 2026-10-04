@@ -10,6 +10,10 @@ infra/mac2-edge/certs/*
 !infra/mac2-edge/certs/README.md
 
 # ── Local machine config ─────────────────────────────────────────────────────
+# Written by infra/client/set-dns.sh so reset-dns.sh can restore the previous
+# resolver. Per-machine state, not a deliverable.
+.dns-backup-*.txt
+
 .env
 *.local
 infra/*/\.env
