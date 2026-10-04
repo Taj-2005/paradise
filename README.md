@@ -8,10 +8,14 @@ evidence of every protocol layer in a single request.
 
 > *The application stays simple — the network is the project.*
 
-📄 **[Title card — team, roles, addresses at a glance →](docs/project.html)**
-📖 **[Setup guide with copy-paste commands →](docs/index.html)**
+### 🌐 Live documentation — <https://paradise-docs-liard.vercel.app>
 
-(open either in a browser, or view them on GitHub Pages)
+| | |
+|---|---|
+| 📄 **[Title card](https://paradise-docs-liard.vercel.app/project.html)** | Team, roles and addresses at a glance |
+| 📖 **[Setup guide](https://paradise-docs-liard.vercel.app)** | Per-machine instructions with copy-paste commands |
+
+Both are also in [`docs/`](docs/) if you would rather read them from a clone.
 
 ---
 
