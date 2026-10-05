@@ -1,0 +1,19 @@
+# A2: dnsmasq configuration (relevant lines for Paradise private network)
+# Source: infra/mac1-dns/dnsmasq.conf on Mac 1 (10.7.27.161)
+# ------------------------------------------------------------------
+
+address=/app.paradise.test/10.7.8.155
+address=/api.paradise.test/10.7.8.155
+listen-address=0.0.0.0
+interface=en0
+interface=lo0
+bind-dynamic
+local-ttl=0
+no-resolv
+server=1.1.1.1
+domain-needed
+bogus-priv
+no-dhcp-interface=en0
+log-queries
+log-facility=/opt/homebrew/var/log/dnsmasq.log
+cache-size=1000
