@@ -44,9 +44,19 @@ submission/
 # for slide decks (WITH_PNG=1 make diagrams) and are ~7x the size.
 docs/diagrams/*.png
 
-# ── Packet captures: keep filtered + small, never multi-hundred-MB dumps ─────
+# ── Packet captures ──────────────────────────────────────────────────────────
+# Default to excluding them: an unscoped capture runs to hundreds of megabytes,
+# and GitHub rejects any single file over 100 MB outright.
+#
+# Captures that were scoped at capture time are small enough to keep, and they
+# are worth keeping — they are the source of the Section C screenshots, so an
+# evaluator can reopen them and apply the filters themselves.
+# Add an exception below for any capture under about a megabyte.
 *.pcap
 evidence/captures/*.pcapng
+!evidence/captures/full-1.pcapng
+!evidence/captures/dns-1.pcapng
+!evidence/captures/dns-2.pcapng
 !evidence/captures/.gitkeep
 !evidence/captures/README.md
 

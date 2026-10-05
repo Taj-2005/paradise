@@ -17,3 +17,32 @@ step 6 expects a saved capture on screen).
 Capture-time filtering is deliberate: an unfiltered capture on shared Wi-Fi is
 mostly other people's traffic, and hunting for your three interesting packets
 wastes demo time.
+
+## What is committed
+
+Captures scoped at capture time are small enough to keep in the repository, and
+they are the source of the Section C screenshots — so the filters below can be
+reapplied against them rather than taken on trust.
+
+| File | Size | Holds |
+|---|---|---|
+| `full-1.pcapng` | 8 KB | The DNS lookup, the TCP handshake and the TLS handshake for one request — the capture behind all three Section C screenshots |
+| `dns-1.pcapng` | 197 KB | A longer DNS-only capture |
+| `dns-2.pcapng` | 9 KB | A single query and its response |
+
+`tcp-1.pcapng` (19 MB) and `tls-1.pcapng` (229 MB) stay local. They were taken
+before the capture filter was in use, so they hold every connection the laptop
+had open. GitHub rejects any single file over 100 MB, and neither adds anything
+the scoped captures do not already show.
+
+## Reproducing the screenshots
+
+```bash
+open -a Wireshark evidence/captures/full-1.pcapng
+```
+
+| Field | Display filter |
+|---|---|
+| C1 | `dns` |
+| C2 | `tcp.flags.syn==1` |
+| C3 | `tls` |
