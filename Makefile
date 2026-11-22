@@ -70,3 +70,10 @@ restore: ## [any]    Return this machine to the known-good state
 
 status: ## [any]    Show what is running on this machine
 	@./scripts/status.sh
+
+# Phase 2 targets live in scripts/phase2/phase2.mk — run `make p2` for the list.
+# Delegated (not included) so Phase 1's `make help` output stays unchanged.
+p2:
+	@$(MAKE) --no-print-directory -f scripts/phase2/phase2.mk p2
+p2-%:
+	@$(MAKE) --no-print-directory -f scripts/phase2/phase2.mk $@
