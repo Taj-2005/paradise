@@ -1,10 +1,14 @@
-# CN Phase 1 — Private Network Service Platform
+# CN Project — Private Network Service Platform
 
-Computer Networks (CSA223) · Phase 1: Build &amp; Observe · **Team paradise**
+Computer Networks (CSA223) · **Phase 1:** Build &amp; Observe · **Phase 2:** Harden,
+Recover &amp; Troubleshoot · **Team paradise**
 
 Four macOS laptops on one LAN, running a private DNS zone, an nginx edge that
 terminates TLS and load balances across two REST backends, with packet-level
-evidence of every protocol layer in a single request.
+evidence of every protocol layer in a single request. Phase 2 adds a backup DNS
+resolver, a visible TTL with DNS-based edge cutover, firewall isolation of the
+backends, HA failover, and layer-by-layer fault diagnosis.
+[Jump to Phase 2 ↓](#phase-2--harden-recover--troubleshoot)
 
 > *The application stays simple — the network is the project.*
 
@@ -29,7 +33,8 @@ Both are also in [`docs/`](docs/) if you would rather read them from a clone.
 | `2401010175` | Omkar Hadole | [@omkar-hadole](https://github.com/omkar-hadole) | Mac 4 | Backend B, verification, packet capture |
 
 Every member can explain any part of this system, not only the part they
-configured — 10 of the 50 Review-1 marks are individual.
+configured — 10 of the 50 marks in each review are individual.
+Phase 2 ownership is in [`docs/phase2/README.md`](docs/phase2/README.md#team-roles-phase-2).
 
 ---
 
@@ -294,24 +299,33 @@ silently degrade into full responses.**
 
 ```
 ├── docs/                    architecture, runbook, troubleshooting, viva prep
-│   ├── index.html           ← public setup guide (start here)
-│   └── diagrams/            topology + request-flow SVGs
+│   ├── index.html           ← public setup guide, Phase 1 + 2 (start here)
+│   ├── diagrams/            topology + request-flow SVGs
+│   │   └── phase2/          Phase 2 topology, DNS failover, TTL cutover, HA failover
+│   └── phase2/              Phase 2 runbook, architecture, final report
 ├── infra/
 │   ├── mac1-dns/            dnsmasq template + install/verify
 │   ├── mac2-edge/           nginx templates, cert generation, install/verify
 │   ├── mac3-backend-a/      run wrapper
 │   ├── mac4-backend-b/      run wrapper
-│   └── client/              set-dns, reset-dns, trust-ca
+│   ├── client/              set-dns, reset-dns, trust-ca
+│   └── phase2/              pf isolation template, .env.phase2.example,
+│                            certs/ + build/ (gitignored)
 ├── services/backend/        one Express codebase, two instances
 ├── scripts/                 bootstrap, render, preflight, verify, capture,
-│                            evidence, failure demos, restore, smoke
+│   │                        evidence, failure demos, restore, smoke
+│   └── phase2/              Phase 2 install / demo / verify / rollback scripts,
+│                            lib/p2common.sh, phase2.mk
 ├── evidence/                collected proof, indexed to the form fields
-├── .env.example             single source of truth for every address
-└── Makefile                 `make` for the task list
+│   └── phase2/              Phase 2 demo + verification output (A–F)
+├── .env.example             single source of truth for every address (both phases)
+└── Makefile                 `make` for Phase 1 · `make p2` for Phase 2
 ```
 
 Config files are **generated** from `*.template` + `.env`. Edit the template or
-the `.env`, then `make render` — never edit a rendered `.conf`.
+the `.env`, then `make render` — never edit a rendered `.conf`. Phase 2 renders
+the **same** templates with a few overrides into `infra/phase2/build/`
+(`make p2-render`).
 
 ---
 
@@ -352,14 +366,68 @@ every Phase 1 template, script and `.env` value. Each Phase 2 file lives in a
 | [`evidence/phase2/`](evidence/phase2/README.md) | demo + verification output |
 
 Quick check: `make p2-test` (offline), then `make p2-verify` from a client.
-The Phase 2 tab of the [setup guide](docs/index.html#phase2) has per-machine commands.
+The Phase 2 section of the [setup guide](docs/index.html#phase2) has per-machine commands.
+
+### Topology after Phase 2
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/phase2/p2-topology-dark.svg">
+  <img alt="CN Phase 2 resilient topology" src="docs/diagrams/phase2/p2-topology-light.svg">
+</picture>
+
+<sub>Dashed = added in Phase 2. Source: [`p2-topology.mmd`](docs/diagrams/phase2/src/p2-topology.mmd) · regenerate with `make p2-diagrams`</sub>
+
+| Machine | Phase 1 role | Phase 2 adds | Cloud equivalent |
+|---|---|---|---|
+| Mac 1 | Private DNS + client | TTL 0 → 30 s (Ext B) | Route 53 record TTL |
+| Mac 2 | Edge (nginx) | live backend health view (Ext D) | ALB target health |
+| Mac 3 | Backend A | **backup DNS** (Ext A) · pf on :3001 (Ext C) | secondary name server · Security Group |
+| Mac 4 | Backend B + client | **standby edge** (Ext E) · pf on :3002 (Ext C) | second ALB + DNS failover · Security Group |
+
+### Extensions, demos and diagrams
+
+| Ext | What it proves | Demo | Diagram |
+|---|---|---|---|
+| A | Clients keep resolving when the primary DNS dies | `make p2-demo-dns-failover` | [DNS failover](docs/diagrams/phase2/p2-dns-failover-light.svg) |
+| B | A TTL lets clients cache a stale answer, and flushing clears it | `make p2-ttl-watch` + `p2-cutover` | [TTL cutover](docs/diagrams/phase2/p2-ttl-cutover-light.svg) |
+| C | Only the edges can reach the backend ports (FILTERED, not CLOSED) | `make p2-isolation-test` | topology above |
+| D | A dead backend is skipped and the client sees zero errors | `make p2-ha-demo` | [HA failover](docs/diagrams/phase2/p2-ha-failover-light.svg) |
+| E | Moving to the standby edge by DNS takes effect once the TTL expires | `make p2-cutover TO=standby` | [TTL cutover](docs/diagrams/phase2/p2-ttl-cutover-light.svg) |
+| F | Diagnosis runs top-down, and the first failing layer is the verdict | `make p2-diagnose` | — |
+
+### Phase 2 commands
+
+| Command | Machine | What it does |
+|---|---|---|
+| `make p2` | any | List every Phase 2 target |
+| `make p2-test` | any | Offline tests: syntax, rendering, parsers, Phase 1 untouched |
+| `make p2-primary-dns` | Mac 1 | Ext B: primary dnsmasq with TTL 30 |
+| `make p2-dns-stop` / `p2-dns-start` | Mac 1 | Ext A: take the primary down / up |
+| `make p2-backup-dns` | Mac 3 | Ext A: backup dnsmasq, same records |
+| `make p2-client-dns` | clients | Ext A: resolvers = Mac 1, then Mac 3 |
+| `make p2-isolate` | Mac 3, 4 | Ext C: pf, only the edges reach :3001/:3002 |
+| `make p2-standby-edge` | Mac 4 | Ext E: standby nginx, same config + cert |
+| `make p2-health-watch` | Mac 2 | Ext D: live backend health (read-only) |
+| `make p2-cutover TO=standby\|primary` | Mac 1 + 3 | Ext B/E: repoint the A records |
+| `make p2-demo-dns-failover` | client | Ext A guided demo |
+| `make p2-ttl-watch` / `p2-flush` | client | Ext B/E: dig vs OS cache vs curl / flush cache |
+| `make p2-isolation-test` | any | Ext C: OPEN / FILTERED / CLOSED probe |
+| `make p2-ha-demo` | client | Ext D: traffic through a backend failure |
+| `make p2-diagnose` | client | Ext F: layer-by-layer verdict |
+| `make p2-fault F=…` / `p2-fault-undo` | varies | Ext F: practice faults |
+| `make p2-verify` / `p2-evidence` | client | Acceptance test / evidence → `evidence/phase2/` |
+| `make p2-status` | any | Phase 2 state of this machine |
+| `make p2-rollback [WHAT=…]` | any | Undo Phase 2 on this machine |
+| `make p2-diagrams` | any | Re-render Phase 2 diagrams + refresh `index.html` |
 
 ## Scope
 
 **Phase 1:** Tasks A–G, Review 1 (50 marks: 40 team + 10 individual viva).
 **Phase 2:** Extensions A–F, Review 2 (50 marks), in the `phase2/` subfolders
-described above. Phase 1 files are unchanged apart from this README, the
-setup guide, and a five-line `p2` delegation at the end of the `Makefile`.
+described above. Phase 1 code is unchanged; the only edits outside the
+`phase2/` folders are documentation (this README, the setup guide, Phase 2
+pointers in two machine READMEs and the diagrams README) and a five-line `p2`
+delegation at the end of the `Makefile`.
 
 Explanations stay inside **Weeks 1–6** of the syllabus — the mid-semester scope.
 Subnetting, NAT, DHCP, IPv6, routing algorithms, ARP/Ethernet framing and Wi-Fi

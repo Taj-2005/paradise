@@ -158,6 +158,10 @@ figure{margin:1.5rem 0}
    than the viewport. Cap its height and let the width follow. The request-flow
    sequence diagram keeps full width — its rows are only legible at that size. */
 .dia-topology{max-width:100%;max-height:min(70vh,620px);width:auto;margin:0 auto}
+/* Phase 2: the topology is near-square like Phase 1's; the three sequence
+   diagrams are tall, so cap them and let the reader open the SVG for detail. */
+.dia-p2-topology{max-width:100%;max-height:min(75vh,680px);width:auto;margin:0 auto}
+.dia-p2-dns-failover,.dia-p2-ttl-cutover,.dia-p2-ha-failover{max-width:820px;margin:0 auto}
 .dia.dk{display:none}
 @media (prefers-color-scheme:dark){ .dia.lt{display:none} .dia.dk{display:block} }
 figcaption{color:var(--fg-3);font-size:.83rem;margin-top:.5rem;text-align:center}
@@ -826,6 +830,83 @@ an exact rollback. Run <code>make p2</code> for the full target list.</p>
     <p style="font-size:.85rem;color:var(--fg-2);margin-bottom:0">Same nginx config, <code>X-Edge: nginx@Mac4</code>. pf on <code>:3002</code>. Also a client.</p></div>
 </div>
 
+<!-- DIAGRAM:p2-topology -->
+<figure>
+  <img class="dia dia-p2-topology lt" src="diagrams/phase2/p2-topology-light.svg" alt="Phase 2 topology — Same four Macs. Dashed = added in Phase 2: backup DNS, standby edge, pf boundary.">
+  <img class="dia dia-p2-topology dk" src="diagrams/phase2/p2-topology-dark.svg"  alt="Phase 2 topology — Same four Macs. Dashed = added in Phase 2: backup DNS, standby edge, pf boundary.">
+  <figcaption>Same four Macs. Dashed = added in Phase 2: backup DNS, standby edge, pf boundary.
+    &nbsp;·&nbsp; <a href="diagrams/phase2/src/p2-topology.mmd">.mmd</a>
+  </figcaption>
+  <details class="mmdsrc">
+    <summary>Mermaid source — phase 2 topology</summary>
+    <div class="body">
+      <div class="codewrap"><pre><code>---
+title: CN Phase 2 — Resilient topology (dashed = added in Phase 2)
+---
+flowchart TB
+
+  subgraph LAN[&quot;Private LAN &amp;mdash; same four Macs as Phase 1, no new hardware&quot;]
+    direction TB
+
+    C[&quot;&lt;b&gt;Clients&lt;/b&gt;&lt;br/&gt;Mac 1 &amp;middot; Mac 3 &amp;middot; Mac 4&lt;br/&gt;resolvers: Mac 1, then Mac 3&quot;]
+
+    DNS1[&quot;&lt;b&gt;Mac 1 &amp;middot; Primary DNS&lt;/b&gt;&lt;br/&gt;dnsmasq &amp;middot; UDP/TCP 53&lt;br/&gt;TTL 0 &amp;rarr; &lt;b&gt;30 s&lt;/b&gt; (Ext B)&quot;]
+
+    DNS2[&quot;&lt;b&gt;Mac 3 &amp;middot; Backup DNS&lt;/b&gt; (Ext A)&lt;br/&gt;dnsmasq &amp;middot; same records&lt;br/&gt;independent &amp;mdash; never forwards to Mac 1&quot;]
+
+    EDGE[&quot;&lt;b&gt;Mac 2 &amp;middot; Primary edge&lt;/b&gt;&lt;br/&gt;nginx &amp;middot; TLS &amp;middot; round robin&lt;br/&gt;X-Edge: nginx@Mac2&quot;]
+
+    SB[&quot;&lt;b&gt;Mac 4 &amp;middot; Standby edge&lt;/b&gt; (Ext E)&lt;br/&gt;nginx &amp;middot; same config &amp;amp; cert&lt;br/&gt;X-Edge: nginx@Mac4&quot;]
+
+    subgraph PF[&quot;pf on each backend (Ext C) &amp;mdash; pass: both edges &amp;middot; everyone else: block drop&quot;]
+      direction LR
+      BA[&quot;&lt;b&gt;Mac 3 &amp;middot; Backend A&lt;/b&gt;&lt;br/&gt;Express &amp;middot; :3001&lt;br/&gt;X-Backend: A&quot;]
+      BB[&quot;&lt;b&gt;Mac 4 &amp;middot; Backend B&lt;/b&gt;&lt;br/&gt;Express &amp;middot; :3002&lt;br/&gt;X-Backend: B&quot;]
+    end
+  end
+
+  C  -- &quot;&lt;b&gt;1 &amp;middot; DNS&lt;/b&gt;&lt;br/&gt;A? app.paradise.test&quot; --&gt; DNS1
+  C  -. &quot;&lt;b&gt;1b &amp;middot; Mac 1 down&lt;/b&gt;&lt;br/&gt;next resolver&quot; .-&gt; DNS2
+
+  C  == &quot;&lt;b&gt;2 &amp;middot; HTTPS by name&lt;/b&gt;&lt;br/&gt;the A record picks the edge&quot; ==&gt; EDGE
+  C  -. &quot;&lt;b&gt;2b &amp;middot; after cutover&lt;/b&gt;&lt;br/&gt;once the TTL expires&quot; .-&gt; SB
+
+  EDGE -- &quot;&lt;b&gt;3 &amp;middot; proxy_pass&lt;/b&gt;&lt;br/&gt;max_fails=1 &amp;middot; proxy_next_upstream&lt;br/&gt;dead backend skipped (Ext D)&quot; --&gt; BA
+  EDGE -- &quot;round robin&quot; --&gt; BB
+  SB -.-&gt; BA
+  SB -.-&gt; BB
+
+  classDef dns     fill:#f3ecff,stroke:#7c3aed,stroke-width:2px,color:#1e1b2e
+  classDef dnsnew  fill:#f3ecff,stroke:#7c3aed,stroke-width:2px,stroke-dasharray:6 4,color:#1e1b2e
+  classDef edge    fill:#e8f0ff,stroke:#2563eb,stroke-width:2px,color:#0f172a
+  classDef edgenew fill:#e8f0ff,stroke:#2563eb,stroke-width:2px,stroke-dasharray:6 4,color:#0f172a
+  classDef ba      fill:#e6fbf7,stroke:#0d9488,stroke-width:2px,color:#0f2b28
+  classDef bb      fill:#fdf6e3,stroke:#ca8a04,stroke-width:2px,color:#2b2410
+  classDef cli     fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#0f172a
+
+  class DNS1 dns
+  class DNS2 dnsnew
+  class EDGE edge
+  class SB edgenew
+  class BA ba
+  class BB bb
+  class C cli
+
+  style PF fill:#f1f5f9,stroke:#475569,stroke-width:2px,stroke-dasharray:6 4,color:#0f172a
+
+  linkStyle 0 stroke:#7c3aed,stroke-width:2px
+  linkStyle 1 stroke:#7c3aed,stroke-width:2px,stroke-dasharray:5 4
+  linkStyle 2 stroke:#2563eb,stroke-width:3px
+  linkStyle 3 stroke:#2563eb,stroke-width:2px,stroke-dasharray:5 4
+  linkStyle 4 stroke:#0f766e,stroke-width:2px
+  linkStyle 5 stroke:#0f766e,stroke-width:2px
+  linkStyle 6 stroke:#0f766e,stroke-width:2px,stroke-dasharray:5 4
+  linkStyle 7 stroke:#0f766e,stroke-width:2px,stroke-dasharray:5 4</code></pre></div>
+    </div>
+  </details>
+</figure>
+<!-- /DIAGRAM:p2-topology -->
+
 <h3>Setup</h3>
 <p class="lede">Order: Mac 1 → Mac 3 → Mac 4 → clients. Pick your machine below.</p>
 
@@ -1050,6 +1131,56 @@ make p2-rollback WHAT=faults          # any     — undo practice faults</code><
 ;; communications error to 10.0.0.10#53: connection refused
 ;; SERVER: 10.0.0.12#53(10.0.0.12)                  ← fell through to the backup
 HTTP 200 via 10.0.0.11  (name resolved by the backup)</div>
+<!-- DIAGRAM:p2-dns-failover -->
+<figure>
+  <img class="dia dia-p2-dns-failover lt" src="diagrams/phase2/p2-dns-failover-light.svg" alt="Backup DNS failover — Ext A — the primary stops answering, the client falls through to the backup, the service carries on.">
+  <img class="dia dia-p2-dns-failover dk" src="diagrams/phase2/p2-dns-failover-dark.svg"  alt="Backup DNS failover — Ext A — the primary stops answering, the client falls through to the backup, the service carries on.">
+  <figcaption>Ext A — the primary stops answering, the client falls through to the backup, the service carries on.
+    &nbsp;·&nbsp; <a href="diagrams/phase2/src/p2-dns-failover.mmd">.mmd</a>
+  </figcaption>
+  <details class="mmdsrc">
+    <summary>Mermaid source — backup dns failover</summary>
+    <div class="body">
+      <div class="codewrap"><pre><code>---
+title: CN Phase 2 — Ext A · Backup DNS failover
+---
+sequenceDiagram
+  autonumber
+  participant C as Client&lt;br/&gt;Mac 4
+  participant P as Primary DNS&lt;br/&gt;Mac 1 · dnsmasq
+  participant B as Backup DNS&lt;br/&gt;Mac 3 · dnsmasq
+  participant E as Edge&lt;br/&gt;Mac 2 · nginx
+
+  Note over C,E: Client resolver list (networksetup): Mac 1, then Mac 3
+
+  rect rgba(124, 58, 237, 0.10)
+    Note over C,B: NORMAL — the first resolver answers
+    C -&gt;&gt; P: Standard query A  app.paradise.test&lt;br/&gt;client:ephemeral → 53 (UDP)
+    P --&gt;&gt; C: A → Mac 2, TTL 30
+    Note right of B: Backup idle, holding its own&lt;br/&gt;copy of the same records
+  end
+
+  Note over P: make p2-dns-stop&lt;br/&gt;dnsmasq stopped — the HOST is still up
+
+  rect rgba(220, 38, 38, 0.10)
+    Note over C,B: PRIMARY DOWN — the client falls through
+    C -&gt;&gt; P: Standard query A  app.paradise.test
+    P --&gt;&gt; C: ICMP port unreachable&lt;br/&gt;dig: &quot;communications error … connection refused&quot;
+    C -&gt;&gt; B: Same query → next resolver in the list
+    B --&gt;&gt; C: A → Mac 2, TTL 30&lt;br/&gt;dig reports SERVER = Mac 3
+  end
+
+  rect rgba(37, 99, 235, 0.10)
+    Note over C,E: The service is unaffected — DNS only finds the IP
+    C -&gt;&gt; E: TCP handshake · TLS · GET /api/status
+    E --&gt;&gt; C: 200 OK
+  end
+
+  Note over C,E: DNS failure ≠ application failure.&lt;br/&gt;Both resolvers down → &quot;Could not resolve host&quot;, yet ping to Mac 2 still works.&lt;br/&gt;Backends down → dig works, TLS works, nginx answers 502.</code></pre></div>
+    </div>
+  </details>
+</figure>
+<!-- /DIAGRAM:p2-dns-failover -->
 <div class="note"><p><strong>DNS failure vs application failure.</strong> DNS down → "Could not
 resolve host", yet <code>ping</code> to the edge IP works. Application down → <code>dig</code>
 works, TCP + TLS to the edge work, nginx returns <strong>502</strong>. The first failing layer is
@@ -1069,6 +1200,64 @@ bypasses the OS cache, so it flips the instant the record changes. <code>curl</c
 macOS resolver (mDNSResponder), which honours the TTL — it keeps the <em>old</em> edge until
 the TTL expires. That gap is why production teams <strong>lower the TTL days before a
 migration</strong>, and why the old edge must stay up until the TTL drains.</p></div>
+<!-- DIAGRAM:p2-ttl-cutover -->
+<figure>
+  <img class="dia dia-p2-ttl-cutover lt" src="diagrams/phase2/p2-ttl-cutover-light.svg" alt="TTL and DNS cutover — Ext B + E — the server changes at once; the OS cache keeps the old edge until the TTL expires.">
+  <img class="dia dia-p2-ttl-cutover dk" src="diagrams/phase2/p2-ttl-cutover-dark.svg"  alt="TTL and DNS cutover — Ext B + E — the server changes at once; the OS cache keeps the old edge until the TTL expires.">
+  <figcaption>Ext B + E — the server changes at once; the OS cache keeps the old edge until the TTL expires.
+    &nbsp;·&nbsp; <a href="diagrams/phase2/src/p2-ttl-cutover.mmd">.mmd</a>
+  </figcaption>
+  <details class="mmdsrc">
+    <summary>Mermaid source — ttl and dns cutover</summary>
+    <div class="body">
+      <div class="codewrap"><pre><code>---
+title: CN Phase 2 — Ext B + E · TTL and DNS-based edge cutover
+---
+sequenceDiagram
+  autonumber
+  participant C as curl / browser&lt;br/&gt;client
+  participant O as OS resolver cache&lt;br/&gt;mDNSResponder
+  participant D as DNS&lt;br/&gt;Mac 1 + Mac 3
+  participant E1 as Primary edge&lt;br/&gt;Mac 2 · nginx
+  participant E2 as Standby edge&lt;br/&gt;Mac 4 · nginx
+
+  rect rgba(124, 58, 237, 0.10)
+    Note over C,D: t = 0 s — fresh lookup, answer cached for its TTL
+    C -&gt;&gt; O: getaddrinfo(app.paradise.test)
+    O -&gt;&gt; D: A? app.paradise.test
+    D --&gt;&gt; O: A → Mac 2, TTL 30
+    O --&gt;&gt; C: Mac 2
+    C -&gt;&gt; E1: HTTPS
+    E1 --&gt;&gt; C: 200 · X-Edge: nginx@Mac2
+  end
+
+  Note over D: t ≈ 5 s — make p2-cutover TO=standby&lt;br/&gt;(run on Mac 1 AND Mac 3)
+
+  rect rgba(202, 138, 4, 0.12)
+    Note over C,E2: STALE WINDOW — up to 30 s
+    Note over D: dig @server already says Mac 4 —&lt;br/&gt;dig bypasses the OS cache
+    C -&gt;&gt; O: getaddrinfo(app.paradise.test)
+    O --&gt;&gt; C: Mac 2 (cache hit, TTL not expired)
+    C -&gt;&gt; E1: HTTPS — still the OLD edge
+    E1 --&gt;&gt; C: 200 · X-Edge: nginx@Mac2
+    Note right of E1: The old edge must stay up&lt;br/&gt;until every cache has drained
+  end
+
+  rect rgba(13, 148, 136, 0.12)
+    Note over C,E2: t ≈ 30 s — TTL expired (or make p2-flush)
+    C -&gt;&gt; O: getaddrinfo(app.paradise.test)
+    O -&gt;&gt; D: A? app.paradise.test
+    D --&gt;&gt; O: A → Mac 4, TTL 30
+    O --&gt;&gt; C: Mac 4
+    C -&gt;&gt; E2: HTTPS — same certificate, same backends
+    E2 --&gt;&gt; C: 200 · X-Edge: nginx@Mac4
+  end
+
+  Note over C,E2: Production: lower the TTL days BEFORE a migration, cut over,&lt;br/&gt;keep the old target alive for one full (old) TTL, then raise the TTL again.</code></pre></div>
+    </div>
+  </details>
+</figure>
+<!-- /DIAGRAM:p2-ttl-cutover -->
 
 <h4>C · Service isolation <span class="pill">Mac 2, then Mac 1</span></h4>
 <div class="codewrap"><pre><code>make p2-isolation-test</code></pre></div>
@@ -1088,6 +1277,69 @@ Sequence: ABABABABABABABABABABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB…ABABABAB
 ✓ service never failed (zero non-200 responses)
 ✓ an outage window was B-only (BBBB… seen)
 ✓ Backend A back in rotation at the end</div>
+<!-- DIAGRAM:p2-ha-failover -->
+<figure>
+  <img class="dia dia-p2-ha-failover lt" src="diagrams/phase2/p2-ha-failover-light.svg" alt="HA failover at the edge — Ext D — a failed connect marks A down and the same request is retried on B; A rejoins after fail_timeout.">
+  <img class="dia dia-p2-ha-failover dk" src="diagrams/phase2/p2-ha-failover-dark.svg"  alt="HA failover at the edge — Ext D — a failed connect marks A down and the same request is retried on B; A rejoins after fail_timeout.">
+  <figcaption>Ext D — a failed connect marks A down and the same request is retried on B; A rejoins after fail_timeout.
+    &nbsp;·&nbsp; <a href="diagrams/phase2/src/p2-ha-failover.mmd">.mmd</a>
+  </figcaption>
+  <details class="mmdsrc">
+    <summary>Mermaid source — ha failover at the edge</summary>
+    <div class="body">
+      <div class="codewrap"><pre><code>---
+title: CN Phase 2 — Ext D · HA failover at the edge
+---
+sequenceDiagram
+  autonumber
+  participant C as Client
+  participant E as Edge&lt;br/&gt;Mac 2 · nginx
+  participant A as Backend A&lt;br/&gt;Mac 3 · :3001
+  participant B as Backend B&lt;br/&gt;Mac 4 · :3002
+
+  rect rgba(37, 99, 235, 0.10)
+    Note over C,B: NORMAL — round robin
+    C -&gt;&gt; E: GET /api/status
+    E -&gt;&gt; A: proxy_pass
+    A --&gt;&gt; E: 200 · X-Backend: A
+    E --&gt;&gt; C: 200 · X-Backend: A
+    C -&gt;&gt; E: GET /api/status
+    E -&gt;&gt; B: proxy_pass
+    B --&gt;&gt; E: 200 · X-Backend: B
+    E --&gt;&gt; C: 200 · X-Backend: B
+  end
+
+  Note over A: Ctrl-C — Backend A stops
+
+  rect rgba(220, 38, 38, 0.10)
+    Note over C,B: FAILURE — detected from real traffic (passive health check)
+    C -&gt;&gt; E: GET /api/status
+    E -x A: connect() → RST &quot;connection refused&quot;
+    Note over E: max_fails=1 → A marked DOWN for fail_timeout=10s
+    E -&gt;&gt; B: proxy_next_upstream — the SAME request, retried
+    B --&gt;&gt; E: 200 · X-Backend: B
+    E --&gt;&gt; C: 200 · X-Backend: B — the client never saw the failure
+    C -&gt;&gt; E: next requests …
+    E -&gt;&gt; B: only B while A is down
+    B --&gt;&gt; E: 200
+    E --&gt;&gt; C: 200 · X-Backend: B
+  end
+
+  Note over A: make backend-a — Backend A restarts
+
+  rect rgba(13, 148, 136, 0.12)
+    Note over C,B: RECOVERY — after fail_timeout nginx tries A again
+    C -&gt;&gt; E: GET /api/status
+    E -&gt;&gt; A: proxy_pass (probe with real traffic)
+    A --&gt;&gt; E: 200 · X-Backend: A
+    E --&gt;&gt; C: 200 · X-Backend: A — round robin resumes
+  end
+
+  Note over C,B: Backends are no longer a single point of failure. The EDGE still is —&lt;br/&gt;remove it with a floating VIP (VRRP/CARP), health-checked DNS, or the Ext E standby.</code></pre></div>
+    </div>
+  </details>
+</figure>
+<!-- /DIAGRAM:p2-ha-failover -->
 <div class="warn"><p><strong>The remaining single point of failure is the edge.</strong> The
 standby (Ext E) removes Mac 2 as a <em>permanent</em> SPOF, but switching is manual and bounded
 by the TTL. Eliminating it needs a floating virtual IP (VRRP / keepalived / CARP) shared by
@@ -1185,6 +1437,7 @@ make p2-fault-undo F=edge-down     # on Mac 2</code></pre></div>
 <tr><td><code>make p2-evidence</code></td><td>client</td><td>Steady-state evidence → <code>evidence/phase2/</code></td></tr>
 <tr><td><code>make p2-status</code></td><td>any</td><td>Phase 2 state of this machine</td></tr>
 <tr><td><code>make p2-rollback [WHAT=…]</code></td><td>any</td><td>Undo Phase 2 on this machine</td></tr>
+<tr><td><code>make p2-diagrams</code></td><td>any</td><td>Re-render Phase 2 diagrams and refresh this page</td></tr>
 </tbody></table></div>
 <p>Full runbook: <a href="phase2/README.md">docs/phase2/README.md</a> ·
 <a href="phase2/architecture.md">architecture</a> ·

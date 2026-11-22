@@ -10,6 +10,7 @@ five-line delegation to `scripts/phase2/phase2.mk`.
 | `scripts/phase2/` | runnable scripts, the shared lib (`lib/p2common.sh`) and `phase2.mk` |
 | `infra/phase2/` | pf rule template, `.env.phase2.example`, `certs/` and `build/` (both gitignored) |
 | `docs/phase2/` | this runbook, [architecture](architecture.md) and the [final report](report.md) |
+| `docs/diagrams/phase2/` | Phase 2 diagrams: topology, DNS failover, TTL cutover, HA failover (`make p2-diagrams`) |
 | `evidence/phase2/` | everything the demo and verify scripts write, see [its README](../../evidence/phase2/README.md) |
 
 Run `make p2` for the full target list.
