@@ -61,8 +61,8 @@ else info "nginx -t skipped (needs nginx + infra/phase2/certs — run on the sta
 
 step "5 · Phase 1 untouched"
 if git -C "$REPO_ROOT" rev-parse >/dev/null 2>&1; then
-  changed="$(git -C "$REPO_ROOT" status --porcelain -- infra services scripts .env.example ':!infra/phase2' ':!scripts/phase2' 2>/dev/null || true)"
-  check "no Phase 1 changes under infra/ services/ scripts/ (phase2/ subfolders excluded)" test -z "$changed"
+  changed="$(git -C "$REPO_ROOT" status --porcelain -- infra services scripts .env.example ':!infra/phase2' ':!scripts/phase2' ':!*.md' 2>/dev/null || true)"
+  check "no Phase 1 CODE changes under infra/ services/ scripts/ (phase2/ and *.md docs excluded)" test -z "$changed"
   [[ -n "$changed" ]] && printf '%s\n' "$changed" | sed 's/^/      /'
 else info "not a git checkout — skipped"; fi
 

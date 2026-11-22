@@ -17,7 +17,7 @@ SECS ?=
         p2-health-watch p2-ha-demo \
         p2-standby-edge \
         p2-diagnose p2-fault p2-fault-undo \
-        p2-rollback
+        p2-rollback p2-diagrams
 
 p2: ## Phase 2 help
 	@echo ""
@@ -37,6 +37,9 @@ p2-status: ## [any]      Phase 2 state of THIS machine
 	@$(P2)/status-phase2.sh
 p2-rollback: ## [any]      Undo Phase 2 here (WHAT=all|primary-dns|backup-dns|client-dns|isolation|standby-edge|cutover|faults)
 	@$(P2)/rollback.sh $(WHAT)
+p2-diagrams: ## [any]      Re-render docs/diagrams/phase2/*.mmd and refresh index.html
+	@$(P2)/build-diagrams.sh
+	@$(P2)/inline-diagrams.sh
 
 # ── Extension A — backup DNS ──────────────────────────────────────────────────
 p2-backup-dns: ## [Mac 3]    Ext A: install + start the backup dnsmasq
