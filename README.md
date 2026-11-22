@@ -338,13 +338,28 @@ the `.env`, then `make render` — never edit a rendered `.conf`.
 
 ---
 
+## Phase 2 — Harden, Recover & Troubleshoot
+
+Phase 2 (Extensions A–F, Review 2) is built **on top of** this system. It reuses
+every Phase 1 template, script and `.env` value. Each Phase 2 file lives in a
+`phase2/` subfolder of its Phase 1 home, so nothing above was rebuilt:
+
+| | |
+|---|---|
+| [`scripts/phase2/`](scripts/phase2/) | scripts + `phase2.mk` — run **`make p2`** for every target |
+| [`infra/phase2/`](infra/phase2/) | pf isolation template, optional `.env.phase2` |
+| [`docs/phase2/`](docs/phase2/README.md) | runbook, [architecture](docs/phase2/architecture.md), [report](docs/phase2/report.md) |
+| [`evidence/phase2/`](evidence/phase2/README.md) | demo + verification output |
+
+Quick check: `make p2-test` (offline), then `make p2-verify` from a client.
+The Phase 2 tab of the [setup guide](docs/index.html#phase2) has per-machine commands.
+
 ## Scope
 
-**Phase 1 only** — Tasks A–G, Review 1 (50 marks: 40 team + 10 individual viva).
-
-Phase 2 extensions (backup DNS, TTL cutover, firewall isolation, HA failover,
-faculty-injected fault) are **not** built. Extension points are noted in each
-machine's README so Phase 2 extends this system rather than rebuilding it.
+**Phase 1:** Tasks A–G, Review 1 (50 marks: 40 team + 10 individual viva).
+**Phase 2:** Extensions A–F, Review 2 (50 marks), in the `phase2/` subfolders
+described above. Phase 1 files are unchanged apart from this README, the
+setup guide, and a five-line `p2` delegation at the end of the `Makefile`.
 
 Explanations stay inside **Weeks 1–6** of the syllabus — the mid-semester scope.
 Subnetting, NAT, DHCP, IPv6, routing algorithms, ARP/Ethernet framing and Wi-Fi
