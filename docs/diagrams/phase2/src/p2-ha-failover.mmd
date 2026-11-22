@@ -1,0 +1,49 @@
+---
+title: CN Phase 2 — Ext D · HA failover at the edge
+---
+sequenceDiagram
+  autonumber
+  participant C as Client
+  participant E as Edge<br/>Mac 2 · nginx
+  participant A as Backend A<br/>Mac 3 · :3001
+  participant B as Backend B<br/>Mac 4 · :3002
+
+  rect rgba(37, 99, 235, 0.10)
+    Note over C,B: NORMAL — round robin
+    C ->> E: GET /api/status
+    E ->> A: proxy_pass
+    A -->> E: 200 · X-Backend: A
+    E -->> C: 200 · X-Backend: A
+    C ->> E: GET /api/status
+    E ->> B: proxy_pass
+    B -->> E: 200 · X-Backend: B
+    E -->> C: 200 · X-Backend: B
+  end
+
+  Note over A: Ctrl-C — Backend A stops
+
+  rect rgba(220, 38, 38, 0.10)
+    Note over C,B: FAILURE — detected from real traffic (passive health check)
+    C ->> E: GET /api/status
+    E -x A: connect() → RST "connection refused"
+    Note over E: max_fails=1 → A marked DOWN for fail_timeout=10s
+    E ->> B: proxy_next_upstream — the SAME request, retried
+    B -->> E: 200 · X-Backend: B
+    E -->> C: 200 · X-Backend: B — the client never saw the failure
+    C ->> E: next requests …
+    E ->> B: only B while A is down
+    B -->> E: 200
+    E -->> C: 200 · X-Backend: B
+  end
+
+  Note over A: make backend-a — Backend A restarts
+
+  rect rgba(13, 148, 136, 0.12)
+    Note over C,B: RECOVERY — after fail_timeout nginx tries A again
+    C ->> E: GET /api/status
+    E ->> A: proxy_pass (probe with real traffic)
+    A -->> E: 200 · X-Backend: A
+    E -->> C: 200 · X-Backend: A — round robin resumes
+  end
+
+  Note over C,B: Backends are no longer a single point of failure. The EDGE still is —<br/>remove it with a floating VIP (VRRP/CARP), health-checked DNS, or the Ext E standby.

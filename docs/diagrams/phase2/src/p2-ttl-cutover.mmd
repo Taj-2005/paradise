@@ -1,0 +1,44 @@
+---
+title: CN Phase 2 — Ext B + E · TTL and DNS-based edge cutover
+---
+sequenceDiagram
+  autonumber
+  participant C as curl / browser<br/>client
+  participant O as OS resolver cache<br/>mDNSResponder
+  participant D as DNS<br/>Mac 1 + Mac 3
+  participant E1 as Primary edge<br/>Mac 2 · nginx
+  participant E2 as Standby edge<br/>Mac 4 · nginx
+
+  rect rgba(124, 58, 237, 0.10)
+    Note over C,D: t = 0 s — fresh lookup, answer cached for its TTL
+    C ->> O: getaddrinfo(app.paradise.test)
+    O ->> D: A? app.paradise.test
+    D -->> O: A → Mac 2, TTL 30
+    O -->> C: Mac 2
+    C ->> E1: HTTPS
+    E1 -->> C: 200 · X-Edge: nginx@Mac2
+  end
+
+  Note over D: t ≈ 5 s — make p2-cutover TO=standby<br/>(run on Mac 1 AND Mac 3)
+
+  rect rgba(202, 138, 4, 0.12)
+    Note over C,E2: STALE WINDOW — up to 30 s
+    Note over D: dig @server already says Mac 4 —<br/>dig bypasses the OS cache
+    C ->> O: getaddrinfo(app.paradise.test)
+    O -->> C: Mac 2 (cache hit, TTL not expired)
+    C ->> E1: HTTPS — still the OLD edge
+    E1 -->> C: 200 · X-Edge: nginx@Mac2
+    Note right of E1: The old edge must stay up<br/>until every cache has drained
+  end
+
+  rect rgba(13, 148, 136, 0.12)
+    Note over C,E2: t ≈ 30 s — TTL expired (or make p2-flush)
+    C ->> O: getaddrinfo(app.paradise.test)
+    O ->> D: A? app.paradise.test
+    D -->> O: A → Mac 4, TTL 30
+    O -->> C: Mac 4
+    C ->> E2: HTTPS — same certificate, same backends
+    E2 -->> C: 200 · X-Edge: nginx@Mac4
+  end
+
+  Note over C,E2: Production: lower the TTL days BEFORE a migration, cut over,<br/>keep the old target alive for one full (old) TTL, then raise the TTL again.

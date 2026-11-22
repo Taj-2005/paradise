@@ -2,28 +2,22 @@
 
 ## Topology after Phase 2
 
-```
-                         ┌─────────────────────────────┐
-  clients ── DNS ──────▶ │ Mac 1  dnsmasq PRIMARY       │  TTL 30
-  (Mac 1/3/4)   │        └─────────────────────────────┘
-                └──────▶ ┌─────────────────────────────┐
-                (if 1    │ Mac 3  dnsmasq BACKUP        │  same records, independent
-                 fails)  └─────────────────────────────┘
-        │
-        │ HTTPS by name ── A record decides which edge ──┐
-        ▼                                                ▼
-  ┌──────────────────────────┐            ┌──────────────────────────┐
-  │ Mac 2  nginx PRIMARY edge │            │ Mac 4  nginx STANDBY edge │
-  │ X-Edge: nginx@Mac2        │            │ X-Edge: nginx@Mac4        │
-  └────────────┬─────────────┘            └─────────────┬────────────┘
-               │   only these two may reach the backends (pf)  │
-               ├──────────────────────┬────────────────────────┘
-               ▼                      ▼
-     ┌───────────────────┐  ┌───────────────────┐
-     │ Mac 3 Backend A    │  │ Mac 4 Backend B    │
-     │ :3001  pf: edges   │  │ :3002  pf: edges   │
-     └───────────────────┘  └───────────────────┘
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../diagrams/phase2/p2-topology-dark.svg">
+  <img alt="CN Phase 2 resilient topology" src="../diagrams/phase2/p2-topology-light.svg">
+</picture>
+
+<sub>Dashed = added in Phase 2. Source: [`p2-topology.mmd`](../diagrams/phase2/src/p2-topology.mmd) · regenerate with `make p2-diagrams`</sub>
+
+### Behaviour, step by step
+
+| Extension | Sequence diagram |
+|---|---|
+| A — backup DNS failover | [light](../diagrams/phase2/p2-dns-failover-light.svg) · [dark](../diagrams/phase2/p2-dns-failover-dark.svg) · [source](../diagrams/phase2/src/p2-dns-failover.mmd) |
+| B + E — TTL and DNS cutover | [light](../diagrams/phase2/p2-ttl-cutover-light.svg) · [dark](../diagrams/phase2/p2-ttl-cutover-dark.svg) · [source](../diagrams/phase2/src/p2-ttl-cutover.mmd) |
+| D — HA failover at the edge | [light](../diagrams/phase2/p2-ha-failover-light.svg) · [dark](../diagrams/phase2/p2-ha-failover-dark.svg) · [source](../diagrams/phase2/src/p2-ha-failover.mmd) |
+
+All four are also inlined in the Phase 2 section of [`docs/index.html`](../index.html#phase2).
 
 ## Changes from Phase 1
 

@@ -95,11 +95,21 @@ sudo nginx -s stop
 cp /opt/homebrew/etc/nginx/nginx.conf.orig /opt/homebrew/etc/nginx/nginx.conf
 ```
 
-## Phase 2 hooks (do not build yet)
+## Phase 2 (built — see [`docs/phase2/`](../../docs/phase2/README.md))
 
-- **Extension D — HA failover:** `max_fails`/`fail_timeout` are already in the
-  upstream block; add active health checks against `/healthz`.
-- **Extension E — edge migration:** stand up this same config on another Mac,
-  then repoint the DNS A record and watch TTL govern the cutover.
-- **Single point of failure:** this machine. Naming that in the viva scores
-  marks (spec Extension D explicitly asks for it).
+Nothing in this folder was edited; this nginx keeps running exactly as in Phase 1.
+
+- **Extension C — isolation:** pf on Mac 3 and Mac 4 now lets only this edge
+  (and the standby) reach `:3001`/`:3002` — `make p2-isolate` on each backend.
+- **Extension D — HA failover:** the passive checks already here
+  (`max_fails=1 fail_timeout=10s` + `proxy_next_upstream`) do the work. Active
+  `health_check` is nginx Plus only, so instead `make p2-health-watch` on this
+  Mac shows backend health live, read-only.
+- **Extension E — edge migration:** this folder's two nginx templates are
+  rendered for Mac 4 with `EDGE_IP=<Mac 4>` (`make p2-standby-edge` there), then
+  the DNS record is repointed (`make p2-cutover TO=standby`) and the TTL
+  governs the cutover.
+- **Single point of failure:** still this machine — the standby makes it a
+  *recoverable* one, bounded by the TTL. Removing it entirely needs a floating
+  VIP (VRRP/CARP) or health-checked DNS; see
+  [`docs/phase2/architecture.md`](../../docs/phase2/architecture.md).
