@@ -39,6 +39,15 @@ The pf template is `.tpl`, not `.template`, on purpose. Phase 1's
 | Mac 3 | Backend A | **Backup DNS** (dnsmasq) + pf isolation on :3001 |
 | Mac 4 | Backend B + client | **Standby edge** (nginx) + pf isolation on :3002 |
 
+## Team roles (Phase 2)
+
+| Member | Phase 2 role | Owns |
+|---|---|---|
+| Nipun ([@nipun1803](https://github.com/nipun1803)) | Primary DNS and TTL (Ext B), documentation | `install-primary-dns`, `ttl-watch`, `flush-dns`, `client-dns`, `dns-service`; runbook, report, setup guide |
+| Anushka ([@anu-ushka](https://github.com/anu-ushka)) | Edge cutover and HA failover (Ext D, E) | `install-standby-edge`, `dns-cutover`, `health-watch`, `ha-demo`; `architecture.md` |
+| Tajuddin Shaik ([@Taj-2005](https://github.com/Taj-2005)) | Backup DNS (Ext A), isolation (Ext C), tooling | `install-backup-dns`, `demo-dns-failover`, `install-isolation`, `isolation-test`, `p2common.sh`, `phase2.mk`, pf template |
+| Omkar Hadole ([@omkar-hadole](https://github.com/omkar-hadole)) | Troubleshooting (Ext F), verification, evidence | `diagnose`, `inject-fault`, `rollback`, `status-phase2`, `test-phase2`, `verify-phase2`, `collect-evidence`, `evidence/phase2` |
+
 To move a role, set `BACKUP_DNS_IP` or `STANDBY_EDGE_IP` in
 `infra/phase2/.env.phase2`. Everything follows from those values.
 
