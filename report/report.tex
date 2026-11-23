@@ -19,13 +19,16 @@
 \usepackage{microtype}
 \usepackage{array}
 \usepackage{amssymb}
+\usepackage{needspace}
+\usepackage{parskip}
+\usepackage[titles]{tocloft}
 \input{diagrams}
 
 \hypersetup{
   colorlinks=true,
   linkcolor=lmNavy,
   urlcolor=lmTeal,
-  pdftitle={paradise Phase 2 Report},
+  pdftitle={paradise Project Report},
   pdfauthor={Nipun, Anushka, Tajuddin Shaik, Omkar Hadole}
 }
 \graphicspath{{figures/}}
@@ -37,7 +40,7 @@
 
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\small paradise --- Phase 2 report}
+\fancyhead[L]{\small paradise --- Project report}
 \fancyhead[R]{\small Computer Networks (CSA223)}
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
@@ -55,37 +58,81 @@
 
 \setlist{itemsep=3pt, topsep=4pt}
 \setstretch{1.12}
+\setlength{\emergencystretch}{3em}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 \sloppy
-\setlength{\emergencystretch}{3em}
+\widowpenalty=10000
+\clubpenalty=10000
+\brokenpenalty=10000
 \newcommand{\pass}{\textcolor{lmGreen}{\textbf{PASS}}}
 \newcommand{\ok}{\textcolor{lmGreen}{\checkmark}}
 \newcommand{\bad}{\textcolor{lmRed}{$\times$}}
+
+
+% Float placement: fill pages, avoid half-empty pages
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.75}
+\setcounter{topnumber}{3}
+\setcounter{totalnumber}{4}
+\setlength{\textfloatsep}{14pt plus 4pt minus 2pt}
+\setlength{\floatsep}{12pt plus 3pt minus 2pt}
+\captionsetup[table]{skip=6pt}
+
+% Table of contents
+\renewcommand{\cftsecfont}{\bfseries\color{lmNavy}}
+\renewcommand{\cftsecpagefont}{\bfseries\color{lmNavy}}
+\setlength{\cftsecnumwidth}{2.2em}
+\setlength{\cftsubsecindent}{2.2em}
+\setlength{\cftsubsecnumwidth}{3.0em}
+\setlength{\cftbeforesecskip}{5pt}
+\renewcommand{\cftpartfont}{\large\bfseries\color{lmTeal}}
+\renewcommand{\cftpartpagefont}{\large\bfseries\color{lmTeal}}
+\renewcommand{\cftpartpresnum}{Part~}
+\setlength{\cftpartnumwidth}{4.2em}
+\setlength{\cftbeforepartskip}{16pt}
+\renewcommand{\cfttoctitlefont}{\Huge\bfseries\color{lmNavy}}
+\renewcommand{\cftaftertoctitle}{\par\vspace{-6pt}{\color{lmTeal}\rule{\textwidth}{1.2pt}}}
+
+% Parts: one per phase, each on a new page
+\renewcommand{\thepart}{\arabic{part}}
+\titleformat{name=\part,numberless}[display]{\bfseries\color{lmNavy}\raggedright\hyphenpenalty=10000}{}{0pt}{\LARGE}[{\color{lmTeal}\titlerule[1.6pt]}]
+\titlespacing*{\part}{0pt}{0pt}{18pt}
 
 \begin{document}
 
 \begin{titlepage}
 \pagecolor{lmNavy}
 \color{white}
-\vspace*{1.6cm}
-{\Huge\bfseries paradise}\\[8pt]
-{\LARGE Private Network Service Platform}\\[18pt]
-{\color{lmTeal}\rule{4.2cm}{2.4pt}}\\[16pt]
-{\Large Phase 2 report}\\[6pt]
-{\large Harden, recover and troubleshoot}\\[2.4cm]
-\begin{tabular}{@{}ll}
-  \color{lmTeal} Course & \color{white} Computer Networks (CSA223) \\[4pt]
-  \color{lmTeal} Review & \color{white} Phase 2 / Review 2 (Extensions A--F) \\[4pt]
-  \color{lmTeal} Zone & \color{white} \texttt{paradise.test} \\[4pt]
-  \color{lmTeal} Authors & \color{white} Nipun, 2401010323 (Mac 1: primary DNS, TTL, captures) \\
-                         & \color{white} Anushka, 2401010090 (Mac 2: primary edge, HA, edge migration) \\
-                         & \color{white} Tajuddin Shaik, 2401010436 (Mac 3: Backend A, isolation, tooling) \\
-                         & \color{white} Omkar Hadole, 2401010175 (Mac 4: backup DNS, standby edge, Ext F) \\[4pt]
-  \color{lmTeal} IPs & \color{white} 10.7.20.228 \quad 10.7.3.123 \quad 10.7.13.238 \quad 10.7.18.17 \\[4pt]
-  \color{lmTeal} Live run & \color{white} 23 November 2026, 11:58--13:10 IST \\
-\end{tabular}
+\setlength{\parindent}{0pt}
+\vspace*{0.4cm}
+{\small\color{lmTeal}\textbf{COMPUTER NETWORKS (CSA223) \quad$\cdot$\quad PROJECT REPORT}}\par
+\vspace{3.2cm}
+{\fontsize{46}{50}\selectfont\bfseries paradise}\par
+\vspace{10pt}
+{\LARGE Private Network Service Platform}\par
+\vspace{18pt}
+{\color{lmTeal}\rule{5cm}{3pt}}\par
+\vspace{18pt}
+{\large Phase 1 \;--\; Build and observe the network}\par
+\vspace{4pt}
+{\large Phase 2 \;--\; Harden, recover and troubleshoot}\par
+\vspace{2.6cm}
+{\small\color{lmTeal}\textbf{TEAM PARADISE}}\par
+\vspace{8pt}
+{\renewcommand{\arraystretch}{1.45}
+\begin{tabular}{@{}l@{\hspace{1.4cm}}l@{\hspace{1.4cm}}l@{}}
+\color{lmTeal}\footnotesize NAME & \color{lmTeal}\footnotesize ENROLMENT & \color{lmTeal}\footnotesize MACHINE AND ROLE \\
+Nipun & 2401010323 & Mac 1 $\cdot$ private DNS \\
+Anushka & 2401010090 & Mac 2 $\cdot$ edge: nginx, TLS, load balancing \\
+Tajuddin Shaik & 2401010436 & Mac 3 $\cdot$ Backend A, caching, tooling \\
+Omkar Hadole & 2401010175 & Mac 4 $\cdot$ Backend B, backup DNS, standby edge \\
+\end{tabular}}\par
 \vfill
-{\small The application stays simple --- the network is the project.}
+\noindent{\color{lmTeal}\rule{\linewidth}{0.6pt}}\par
+\vspace{6pt}
+{\small Review 1 (Tasks A--G) \;$\cdot$\; Review 2 (Extensions A--F) \hfill Zone \texttt{paradise.test} \;$\cdot$\; November 2026}\par
 \end{titlepage}
 \nopagecolor
 \color{black}
@@ -93,7 +140,325 @@
 \tableofcontents
 \newpage
 
-\section{Executive summary}
+\section{Abstract}
+paradise is a fully local private service. A client types
+\texttt{https://app.paradise.test/api/status}, resolves the name through the team's own DNS,
+completes TLS at a reverse proxy, and receives JSON from one of two backend replicas. The four
+network roles run on four physical MacBooks on the lab Wi-Fi: Mac~1 runs dnsmasq, Mac~2 runs
+nginx (TLS termination and round-robin load balancing), and Macs~3 and~4 run the two Express
+backends.
+
+\textbf{Part~1 (Phase~1, Review~1)} builds and observes that system: architecture, protocol
+mapping, implementation, packet captures of DNS, TCP and TLS, HTTP caching with a deterministic
+\texttt{304}, and four failure demonstrations that each break one layer.
+\textbf{Part~2 (Phase~2, Review~2)} hardens it without rebuilding it: a backup DNS resolver, a
+visible 30-second TTL with DNS-based edge cutover, firewall isolation of the backends,
+high-availability failover, a standby edge, and a layer-by-layer troubleshooting method. All six
+extensions were demonstrated live, the acceptance test passed 20/20, and four real incidents were
+diagnosed, including a keep-alive race between nginx and Node.js that caused six 502s and was fixed.
+
+Every number quoted in this report is taken from the project's evidence files and packet captures (\texttt{evidence/}).
+
+\subsection*{Key results}
+\begin{table}[H]
+\centering
+{\small\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}L{3.4cm}L{11.2cm}@{}}
+\toprule
+\textbf{Area} & \textbf{Result} \\
+\midrule
+Private DNS & \texttt{app.paradise.test} resolves only through Mac~1; public DNS returns NXDOMAIN \\
+HTTPS edge & TLS~1.3 with a team CA, verified without \texttt{-k}; HTTP/2 to the client \\
+Load balancing & Both backends in rotation (\texttt{B A A B A B}); deterministic \texttt{304 Not Modified} \\
+Acceptance test & \texttt{make p2-verify}: \textbf{20/20} before and after the Phase~2 demos \\
+DNS failover & Same query re-sent to the backup resolver \textbf{1.0~s} after the primary went silent \\
+TTL and cutover & TTL 30~s; stale window \textbf{9~s} sampled, \textbf{11.4~s} on the wire, 0~s after a flush \\
+Isolation & Backend ports \textbf{FILTERED} from clients, \textbf{OPEN} from the edge \\
+HA failover & \textbf{145 requests, 0 errors} while Backend~A was stopped and restarted \\
+Troubleshooting & 3 injected faults and 4 real incidents diagnosed layer by layer \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\clearpage
+\part*{{\large\color{lmTeal}PART 1}\protect\\[6pt]Phase 1 --- Build and observe the network}
+\addcontentsline{toc}{part}{Part 1\quad Phase 1 --- Build and observe the network}
+\section{Purpose and constraints}
+The brief asks for a private environment with no cloud. A client must (i)~use a
+\texttt{.test} name, (ii)~resolve it through the team DNS, (iii)~open HTTPS on the team edge
+with a certificate it genuinely trusts, (iv)~see both backends through the load balancer,
+(v)~receive HTTP caching headers and a \texttt{304 Not Modified}, and (vi)~show the whole path
+in packet captures.
+
+We used the full four-machine layout: each role runs on its own Mac, so every hop in the
+request is a real LAN hop that can be captured. Addresses come from the lab DHCP server,
+so they live in one file (\texttt{.env}) and every configuration file is a template rendered
+from it. Subnetting, NAT, DHCP, IPv6, routing and Ethernet framing belong to Weeks~7--12
+of the syllabus and are deliberately out of scope.
+
+\section{Architecture}
+
+\subsection{Roles versus hardware}
+\begin{table}[H]
+\centering
+\caption{Mapping from the brief to this team.}
+{\small
+\begin{tabular}{@{}lllll@{}}
+\toprule
+\textbf{Brief} & \textbf{Owner} & \textbf{LAN identity} & \textbf{Software} & \textbf{Cloud equivalent} \\
+\midrule
+Mac 1 DNS + client & Nipun & 10.7.27.161 & dnsmasq :53 & Route 53 private zone \\
+Mac 2 edge + TLS + LB & Anushka & 10.7.8.155 & nginx :80/:443 & ALB + ACM certificate \\
+Mac 3 Backend A & Tajuddin & 10.7.26.203:3001 & Node.js / Express & EC2 target \\
+Mac 4 Backend B + client & Omkar & 10.7.18.17:3002 & Node.js / Express & EC2 target \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+Both backends run \textbf{one codebase} (\texttt{services/backend/}) started as two instances
+that differ only in their identity and port. Real addresses live only in \texttt{.env};
+\texttt{make render} regenerates \texttt{dnsmasq.conf} and the nginx site from templates.
+
+\subsection{LAN topology}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.74\textwidth]{topology.pdf}
+\caption{Phase 1 topology. Clients only ever learn the edge's address from DNS. nginx on
+Mac~2 is the only process a client connects to; the backends are reached only by the edge.}
+\end{figure}
+
+The structure comes from \emph{which service runs where}, not from the physical network:
+all four Macs are on one Wi-Fi network and can reach each other directly. Clients always
+use the name; nginx is the only process they treat as ``the service''. The backends could
+be renumbered or scaled without any client noticing. That indirection is what a reverse
+proxy buys, and it is what makes Phase~2's firewall isolation possible.
+
+\subsection{Request path}
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{\drawRequestPath}
+\caption{One successful client request, left to right.}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{request-flow.pdf}
+\caption{Sequence of one \texttt{curl https://app.paradise.test/api/status}: DNS, TCP, TLS, then
+HTTP. nginx opens a separate plaintext connection to the backend it picks.}
+\end{figure}
+
+\subsection{Two connections, not one}
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{\drawTwoConnections}
+\caption{TLS terminates at Mac~2. The client leg and the upstream leg are independent TCP sessions.}
+\end{figure}
+
+\begin{table}[!htbp]
+\centering
+\caption{The two legs of one request.}
+{\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+ & \textbf{client $\to$ edge} & \textbf{edge $\to$ backend} \\
+\midrule
+Protocol & HTTPS (TLS 1.3, HTTP/2 via ALPN) & plain HTTP/1.1 \\
+Destination port & 443 & 3001 / 3002 \\
+Source port & client ephemeral & nginx ephemeral \\
+Readable in Wireshark & no (Application Data) & yes \\
+Lifetime & per client connection & pooled and reused (\texttt{keepalive 16}) \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\section{Protocol layers}
+
+\begin{figure}[H]
+\centering
+\drawOsi
+\caption{The OSI stack mapped onto paradise. TCP/IP folds layers 5--7 into ``application''.}
+\end{figure}
+
+\paragraph{DNS.}
+dnsmasq on Mac~1 listens on \texttt{0.0.0.0:53} (UDP and TCP). \texttt{address=/app.paradise.test/}
+and \texttt{/api.paradise.test/} answer with the edge's IP; every other name is forwarded
+upstream, so clients keep normal internet access. Evidence (A3): from Mac~3,
+\texttt{dig app.paradise.test} returns \texttt{status: NOERROR}, flag \texttt{aa}, answer
+\texttt{10.7.8.155}, \texttt{SERVER: 10.7.27.161\#53}. The same query to \texttt{@8.8.8.8} returns
+\texttt{NXDOMAIN} (A4), which proves the name is genuinely private.
+DNS uses UDP because a query fits in one datagram and a lost one is simply retried; a handshake
+would double resolution latency.
+
+\paragraph{TCP.}
+After resolution the client opens \texttt{10.7.8.155:443} from an ephemeral port:
+SYN, SYN-ACK, ACK, before any TLS byte is sent. A connection is identified by its 4-tuple,
+so many clients share \texttt{:443} on the edge --- transport-layer demultiplexing.
+
+\paragraph{TLS.}
+\begin{figure}[!htbp]
+\centering
+\drawTls
+\caption{Private CA. Clients trust the CA, not the leaf certificate, and never use \texttt{-k}.}
+\end{figure}
+
+Observed (C3 and B1): the ClientHello carries SNI \texttt{app.paradise.test} and offers ALPN
+\texttt{h2, http/1.1}; the server selects \textbf{TLS 1.3} with
+\texttt{TLS\_CHACHA20\_POLY1305\_SHA256} and \textbf{HTTP/2}. The certificate for
+\texttt{app.paradise.test} is issued by the paradise Local Root CA and verifies without \texttt{-k}.
+The SAN must match the requested host; a CN-only certificate is rejected by every modern client.
+
+\paragraph{HTTP and caching.}
+Backends return JSON plus \texttt{X-Backend}, a weak \texttt{ETag}, \texttt{Date} and
+\texttt{Cache-Control:} \texttt{public,} \texttt{max-age=60} (D1). The edge adds \texttt{X-Upstream-Addr} and \texttt{X-Edge}.
+A conditional request with \texttt{If-None-Match} returns \texttt{304 Not Modified}.
+
+\paragraph{Load balancing.}
+nginx's \texttt{upstream} \texttt{backend\_pool} lists both backends with
+\texttt{max\_fails=1} and \texttt{fail\_timeout=10s}; the default algorithm is round robin. Six consecutive requests (B2) returned \texttt{B A A B A B},
+all \texttt{HTTP/2 200}. nginx is a layer-7 balancer (it reads \texttt{Host} and the path), the
+equivalent of an ALB rather than an NLB.
+
+\section{Implementation (what we built, not a runbook)}
+
+\subsection{Private DNS}
+Homebrew dnsmasq on Mac~1, rendered from \texttt{infra/mac1-dns/dnsmasq.conf.template}.
+\texttt{.test} is reserved by RFC~6761; \texttt{.local} was avoided because macOS sends it to
+mDNS/Bonjour. TTL is 0 in Phase~1 so no client holds a stale answer mid-demo.
+\texttt{make client-dns} points every Mac's resolver at Mac~1.
+
+\subsection{Backends}
+One Express codebase, two instances (\texttt{make backend-a}, \texttt{make backend-b}). Endpoints:
+\texttt{GET /}, \texttt{GET /api/status} (identifies the replica), \texttt{GET /api/cacheable}
+(byte-identical on both replicas) and \texttt{GET /healthz}. \texttt{src/config.js}
+\textbf{refuses to start on 127.0.0.1}: a loopback-bound backend works locally but is invisible
+to nginx, so every proxied request would return 502.
+
+\subsection{Edge}
+nginx on Mac~2. Port 80 redirects to 443. \texttt{proxy\_pass http://backend\_pool} with
+HTTP/1.1 and pooled keep-alive connections; \texttt{proxy\_next\_upstream} retries a failed
+attempt on the other backend. A \texttt{default\_server} returns \texttt{444} for requests by IP,
+so ``by name, never by IP'' is enforced by the server, not by discipline.
+
+\subsection{TLS}
+\texttt{gen-certs.sh} uses mkcert to create the team root CA and a leaf certificate whose SAN covers
+\texttt{app.paradise.test} and \texttt{api.paradise.test}. TLS 1.2 and 1.3 only, ECDHE ciphers,
+session tickets off. \texttt{make client-trust} installs \texttt{rootCA.pem} on Mac~1, 3 and 4.
+
+\subsection{Tooling}
+\texttt{make smoke} runs the whole stack on one laptop (15 checks, no LAN, no sudo).
+\texttt{make verify} is the acceptance test: ping matrix, DNS, NXDOMAIN at 8.8.8.8, TLS without
+\texttt{-k}, both backends in rotation, 444 by IP, caching headers and a stable 304.
+\texttt{make evidence} writes the form answers into \texttt{evidence/}.
+
+\section{Observations and evidence}
+Filed under \texttt{evidence/} (index in \texttt{evidence/README.md}):
+
+\begin{table}[!htbp]
+\centering
+\caption{Evidence collected on 4 October 2026.}
+{\small
+\begin{tabular}{@{}L{1.0cm}L{4.2cm}L{9.4cm}@{}}
+\toprule
+\textbf{ID} & \textbf{File} & \textbf{What it shows} \\
+\midrule
+A1 & \texttt{A1-ips.txt} & Four roles, four IPs, all on \texttt{en0}. \\
+A3 & \texttt{A3-dig-client.txt} & \texttt{app.paradise.test} $\to$ 10.7.8.155, \texttt{SERVER} 10.7.27.161, authoritative. \\
+A4 & \texttt{A4-dig-8888.txt} & \texttt{@8.8.8.8} $\to$ NXDOMAIN: the zone is private. \\
+A5 & \texttt{A5-ping-matrix.txt} & Every pair of Macs: 4/4 replies, 0\% loss. \\
+B1 & \texttt{B1-curl-verbose.txt} & TLS 1.3 handshake, certificate verified, HTTP/2 200, no \texttt{-k}. \\
+B2 & \texttt{B2-lb-6x.txt} & Six requests: \texttt{B A A B A B}. \\
+C1--C3 & \texttt{C-wireshark/} & DNS query/response, TCP handshake, TLS ClientHello with SNI. \\
+D1 & \texttt{D1-headers.txt} & \texttt{Cache-Control}, \texttt{ETag}, \texttt{Date}, \texttt{X-Backend}; 304 on revalidation. \\
+D3 & \texttt{D3-failure-demo-*.txt} & Failure demonstrations A, B and C (Section~\ref{sec:fail}). \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.88\textwidth]{C1-dns-query-and-response.jpeg}
+\caption{C1, filter \texttt{dns}: Mac~3 (10.7.26.203) queries Mac~1 (10.7.27.161) over UDP/53;
+the response maps \texttt{app.paradise.test} to 10.7.8.155.}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.88\textwidth]{C2-tcp-syn-and-synack.jpeg}
+\caption{C2, filter \texttt{tcp.flags.syn==1}: SYN from an ephemeral port to 10.7.8.155:443 and
+the SYN-ACK back, completing before any TLS record.}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.88\textwidth]{C3-tls-clienthello-sni.jpeg}
+\caption{C3, filter \texttt{tls}: ClientHello with SNI \texttt{app.paradise.test}; everything after the
+handshake is opaque Application Data.}
+\end{figure}
+
+\paragraph{Why the 304 uses \texttt{/api/cacheable}.}
+\texttt{/api/status} must identify its backend, so A and B return different bodies and therefore
+different ETags for the same URL. Behind round robin, a conditional request often lands on the
+other replica, which does not recognise the validator and returns a full 200: the 304 would
+appear only about half the time. \texttt{/api/cacheable} is byte-identical on both machines, so
+revalidation is deterministic. \textbf{Validators must agree across replicas, or conditional
+requests silently degrade into full responses.}
+
+\section{Failure analysis}\label{sec:fail}
+These are the required Phase~1 demonstrations. Each one breaks exactly one layer.
+
+\begin{table}[!htbp]
+\centering
+\caption{Deliberate faults and the layer they expose (\texttt{make demo-fail}).}
+{\small
+\begin{tabular}{@{}L{3.0cm}L{5.6cm}L{2.6cm}L{3.2cm}@{}}
+\toprule
+\textbf{Fault} & \textbf{Observation} & \textbf{Layer} & \textbf{Lesson} \\
+\midrule
+A: stop Backend A & Before \texttt{BAABAB}; after \texttt{BBBBBB}, all 200; restored \texttt{BAABBA} & application & the edge routes around a dead replica \\
+B: client DNS $\to$ 8.8.8.8 & \texttt{dig} NXDOMAIN; \texttt{ping 10.7.8.155} still 0\% loss & application (DNS) & naming and reachability are independent \\
+C: request port 9999 & \texttt{Connection refused} after 366 ms; host still pings & transport (TCP) & IP $\neq$ service: RST means no listener \\
+D: stop both backends & TLS completes, nginx returns \textbf{502} & application (upstream) & edge is up, origin is not \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\begin{figure}[!htbp]
+\centering
+\resizebox{0.96\textwidth}{!}{\drawDiagnose}
+\caption{Diagnosis runs top down; the first step that fails names the layer (\texttt{scripts/status.sh}).}
+\end{figure}
+
+\begin{table}[!htbp]
+\centering
+\caption{Real symptoms met while building, and their causes.}
+{\small
+\begin{tabular}{@{}L{3.8cm}L{4.8cm}L{5.6cm}@{}}
+\toprule
+\textbf{Symptom} & \textbf{Cause} & \textbf{Fix} \\
+\midrule
+\texttt{dig} times out from clients & dnsmasq bound to 127.0.0.1 & \texttt{listen-address=0.0.0.0}, \texttt{make dns} \\
+502 on every request & backend bound to loopback & bind \texttt{0.0.0.0}; now refused by \texttt{config.js} \\
+\texttt{curl: (60)} & CA not trusted on that Mac & \texttt{make client-trust}, never \texttt{-k} \\
+304 only sometimes & testing \texttt{/api/status} & use \texttt{/api/cacheable} \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\section{Learning notes (viva)}
+\begin{itemize}
+  \item DNS finds an IP. TCP then builds a connection. TLS then authenticates the name. HTTP finally carries the request.
+  \item DNS is a directory lookup, not a connection: breaking it leaves \texttt{ping} to the IP working.
+  \item TLS terminates at the edge. The upstream leg is a separate, plaintext TCP connection.
+  \item Trusting \texttt{app.paradise.test.crt} is wrong; trusting the CA is right. The SAN, not the CN, must match.
+  \item \texttt{X-Backend} rides back through the proxy untouched, which is what makes round robin visible.
+  \item ``Refused'' (RST) and ``timeout'' are different transport-layer answers. Phase~2 uses this distinction.
+  \item Mac~2 is the single point of failure: if it dies, DNS still resolves and the backends are healthy, yet nothing is reachable.
+\end{itemize}
+
+\clearpage
+\part*{{\large\color{lmTeal}PART 2}\protect\\[6pt]Phase 2 --- Harden, recover and troubleshoot}
+\addcontentsline{toc}{part}{Part 2\quad Phase 2 --- Harden, recover and troubleshoot}
+\section{Phase 2 summary}
 Phase~2 hardens the Phase~1 private service without rebuilding it. It adds a backup DNS
 resolver, a visible 30-second TTL with DNS-based edge cutover, firewall isolation of the
 backends, high-availability failover at the edge, a standby edge, and a layer-by-layer
@@ -101,7 +466,7 @@ troubleshooting procedure. All six extensions were demonstrated live on four Mac
 lab Wi-Fi (10.7.0.0/16). Every number below comes from a file in \texttt{evidence/phase2/} or a
 capture in \texttt{evidence/captures/}.
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{Results by extension.}
 {\small
@@ -125,7 +490,7 @@ Node.js. Under failover it turned into \textbf{six HTTP 502s}. It was diagnosed 
 error log, fixed with two timer values, and the demo was re-run clean (Section~\ref{sec:inc},
 Incident~2). This is the most important thing we learned in Phase~2.
 
-\section{Phase 1 baseline and Phase 2 goal}
+\section{From Phase 1 to Phase 2}
 Phase~1 established the path
 \texttt{client $\to$ Mac 1 DNS $\to$ Mac 2 nginx/TLS edge $\to$ Backend A (Mac 3) or Backend B (Mac 4)}.
 dnsmasq maps the private \texttt{.test} names to the edge; nginx terminates TLS 1.3 on port 443,
@@ -145,7 +510,7 @@ material. No new hardware was added: Mac~4 additionally hosts the backup DNS and
 \caption{Topology after Phase~2. Dashed elements were added in Phase~2.}
 \end{figure}
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{What changed from Phase~1, with the cloud equivalent.}
 {\small
@@ -215,7 +580,7 @@ pass by counting retries (0) and deleted that run.
 \texttt{make p2-verify} was run from Mac~1 before the demos (12:11:47) and again after every fault
 had been undone (13:09:49). Both runs: \textbf{20 passed, 0 failed}.
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{Acceptance checks (\texttt{verify-phase2-20261123-130949.txt}).}
 {\small
@@ -247,7 +612,7 @@ Mac~4 runs a second dnsmasq rendered from the same template. Every client's reso
 \texttt{10.7.20.228, 10.7.18.17}. Nipun stopped dnsmasq on Mac~1 (\texttt{make p2-dns-stop}) from
 \textbf{12:47:46 to 12:49:43}, observed from three places at once:
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{Ext~A observed from three vantage points.}
 {\small
@@ -262,7 +627,7 @@ Mac 4 dnsmasq log & Mac 1's queries every $\sim$4 s until 12:49:41, answered \te
 \end{tabular}}
 \end{table}
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{Packets in \texttt{p2-A-dns-failover.pcapng}.}
 {\small
@@ -282,13 +647,13 @@ Over the whole capture the primary answered 117 of 174 queries (57 lost during t
 the backup answered 28 of 28. \textbf{Resolution never stopped}; the cost was a $\sim$1~s resolver
 timeout per lookup while the primary was down.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[height=0.62\textheight,keepaspectratio]{p2-dns-failover.pdf}
 \caption{Ext~A sequence: the client retries the same query on the next resolver in its list.}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.85\textwidth]{W-A2-same-id-retried-on-backup.png}
 \caption{W-A2: transaction ID \texttt{0x90b0} unanswered by the primary, then re-sent to and answered by the backup 10.7.18.17.}
@@ -301,7 +666,7 @@ side: \texttt{dig} (asks the server, bypasses the cache), the OS cache (what
 \texttt{mDNSResponder} hands to applications), and \texttt{curl} (where a real HTTPS request went).
 Meanwhile the records were changed with \texttt{make p2-cutover} on Mac~1 and Mac~4.
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{Stale windows measured by \texttt{p2-ttl-watch}.}
 {\small
@@ -327,13 +692,13 @@ at all, so staleness is visible only in where TCP connects.
 not from when the record changed. The cached entry was already $\sim$20~s old at the moment of the
 change. Across many clients the stale period is spread uniformly between 0 and 30~s.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[height=0.62\textheight,keepaspectratio]{p2-ttl-cutover.pdf}
 \caption{Ext~B/E sequence: the record changes on the server, but each client moves only when its cached answer expires or is flushed.}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{W-B2-E1-dns-flips-then-clienthello-moves.png}
 \caption{W-B2/E1: the DNS answer flips to 10.7.18.17, but ClientHellos keep going to 10.7.3.123 for another 11.4~s.}
@@ -344,7 +709,7 @@ On Mac~3 and Mac~4 a pf anchor passes :3001/:3002 only from the two edges' IPs a
 \texttt{block drop}s everything else. The spec says \emph{only Mac~2}; we also pass the standby edge
 (Mac~4), because after an Ext~E cutover it must reach Backend~A. Clients are blocked either way.
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{Ext~C probes.}
 {\small
@@ -362,13 +727,13 @@ In \texttt{p2-C-isolation.pcapng}, Mac~1 sends 5 SYNs to \texttt{10.7.13.238:300
 4~s (frames 1--5, all from ephemeral port 62233), then 5 to \texttt{10.7.18.17:3002}. There is no
 SYN-ACK and no RST. A closed port answers with RST at once; a filtered port answers with nothing.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \resizebox{0.9\textwidth}{!}{\drawFiltered}
 \caption{CLOSED versus FILTERED: two distinguishable transport-layer refusals.}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.8\textwidth]{W-C1-syn-retransmissions-filtered.png}
 \caption{W-C1: SYN retransmissions to a filtered backend port, with no reply.}
@@ -381,7 +746,7 @@ Passive health checking: \texttt{max\_fails=1 fail\_timeout=10s} on both upstrea
 \emph{inside the same client request}. \texttt{make p2-ha-demo} sent one request about every 0.7~s
 for 100~s from Mac~1 while Tajuddin pressed Ctrl-C on Backend~A, then restarted it.
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{HA failover run (\texttt{D-ha-demo-20261123-124350.txt}).}
 {\small
@@ -406,7 +771,7 @@ A was marked down for \texttt{fail\_timeout}; each time the 10~s ban expired, on
 again, which is why the retries come in roughly 10~s steps. This clean run came \textbf{after}
 fixing Incident~2; the same test before the fix gave six 502s.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[height=0.62\textheight,keepaspectratio]{p2-ha-failover.pdf}
 \caption{Ext~D sequence: a failed attempt on Backend~A is replayed on Backend~B within the same client request.}
@@ -422,7 +787,7 @@ from \texttt{nginx@10.7.3.123} to \texttt{nginx@10.7.18.17}. Clients that had ca
 kept using the old edge for 9~s (sampled) or 11.4~s (on the wire). \textbf{No request failed in
 either direction}, because the old edge stayed up until the cache had drained.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.8\textwidth]{W-E1-clienthello-both-edges.png}
 \caption{W-E1: ClientHellos with the same SNI \texttt{app.paradise.test} to both edges.}
@@ -457,7 +822,7 @@ refused} separates ``something is dropping packets'' from ``nothing is listening
 When Backend~A was stopped, requests \#22--\#36 included \textbf{six HTTP 502s}, although Backend~B
 was running throughout.
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{Incident 2 evidence.}
 {\small
@@ -473,7 +838,7 @@ Mac 2 error log, 12:21:39 and 12:32:10 & the same failure on B and \texttt{Conne
 \end{tabular}}
 \end{table}
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \resizebox{\textwidth}{!}{\drawKeepalive}
 \caption{Root cause: two idle timers on the same TCP connection, in the wrong order.}
@@ -485,6 +850,7 @@ noticed. With A dead, the retry went to A and failed; \texttt{max\_fails=1} then
 \textbf{the last healthy peer}, for 10~s, and every request in that window got 502. The fix orders
 the timers so the side that reuses a connection gives it up before the side that closes it:
 
+\par\noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}
 # infra/mac2-edge/nginx/conf.d/site.conf.template, upstream backend_pool
 keepalive_timeout 4s;
@@ -493,6 +859,7 @@ keepalive_timeout 4s;
 server.keepAliveTimeout = 65_000;
 server.headersTimeout   = 66_000;   // must exceed keepAliveTimeout
 \end{lstlisting}
+\end{minipage}\par
 Re-test: the identical demo gave \textbf{145 requests, 0 non-200}. Backend unit tests still pass
 (8/8) and \texttt{make p2-test} passes (55/55).
 
@@ -519,13 +886,13 @@ production, zone transfers keep secondaries consistent automatically.
 \texttt{make p2-diagnose} runs the layers in order and stops trusting the result at the
 \textbf{first failure}; everything after it is either explained by it or untrustworthy.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \resizebox{0.96\textwidth}{!}{\drawDiagnose}
 \caption{The top-down diagnosis ladder used by \texttt{diagnose.sh}.}
 \end{figure}
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{What each layer runs and what a failure means.}
 {\small
@@ -561,7 +928,7 @@ production, zone transfers keep secondaries consistent automatically.
 \vspace{2pt}{\footnotesize * The campus gateway, not a real host (Incident 3).}
 \end{table}
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{Injected faults: verdict, fix and evidence.}
 {\small
@@ -581,7 +948,7 @@ failure (every layer up to TCP passed, then curl 60, because Mac~1 did not yet t
 with \texttt{make client-trust}, never \texttt{-k}), and \texttt{...120116} shows the same Mac healthy
 46~s later.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{F-2-edge-down-verdict.png}
 \caption{F-2: \texttt{p2-diagnose} with nginx stopped on Mac~2. DNS and ping pass; TCP is refused; verdict: transport.}
@@ -654,31 +1021,97 @@ at all. Production spreads these across failure domains.
 
 \section{Rollback}
 Phase~2 keeps a rollback copy of everything it changes. After the evaluation, on each machine:
+\par\noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}
 make p2-rollback                  # everything Phase 2 changed on THIS machine
 make p2-rollback WHAT=isolation   # Mac 3 / Mac 4: flush the pf anchor, release the token
 make p2-status                    # confirm: no anchor, no standby nginx, resolvers restored
 \end{lstlisting}
+\end{minipage}\par
 \texttt{p2-rollback} restores \texttt{dnsmasq.conf.pre-phase2}, the saved client resolver list, and
 stops the standby nginx. The pf rules were applied only to the anchor, so nothing in
 \texttt{/etc/pf.conf} needs restoring.
 
 \section{Conclusion}
-Phase~2 turned a working but fragile Phase~1 service into one that survives the loss of its primary
-DNS server, a backend, and (by DNS cutover) its edge, with backend ports closed to everyone but the
-edges. All six extensions were demonstrated live, the acceptance test passed 20/20 before and after
-the demos, and every claim is backed by a terminal log, a packet capture or a screenshot. The most
-valuable result was not a passing demo but a failing one: the keep-alive race showed that
-redundancy can hide latent faults until the moment it is needed. The remaining SPOF, manual edge
-selection, is named with three concrete ways to remove it.
+Phase~1 delivered a working private name, a trusted HTTPS edge, two identifiable load-balanced
+backends, deterministic HTTP caching, and packet-level proof of DNS, TCP and TLS on four real
+machines. Its failure demonstrations showed that each layer fails in its own, distinguishable way.
 
+Phase~2 turned that working but fragile service into one that survives the loss of its primary
+DNS server, a backend, and (by DNS cutover) its edge, with backend ports closed to everyone but the
+edges. All six extensions were demonstrated live and the acceptance test passed 20/20 before and
+after the demos. The most valuable result was not a passing demo but a failing one: the keep-alive
+race showed that redundancy can hide latent faults until the moment it is needed. The remaining
+single point of failure, manual edge selection, is named with three concrete ways to remove it.
+
+\section{What is not in this report}
+Machine-by-machine setup steps live in \texttt{docs/runbook.md}, \texttt{docs/phase2/README.md} and
+the setup guide (\texttt{docs/index.html}); they are operational notes, not the academic
+deliverable. Private keys, the CA key and the real \texttt{.env} are not committed.
+Subnetting, NAT, DHCP, IPv6, routing and Ethernet framing (Weeks~7--12) are out of scope.
+
+\clearpage
 \appendix
-\section{Reference configuration}
+\section{Phase 1 reference configuration}
+Excerpts of the rendered files. Private keys are not included.
+
+\subsection{dnsmasq (Mac 1, excerpt)}
+\par\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}
+address=/app.paradise.test/10.7.8.155
+address=/api.paradise.test/10.7.8.155
+local-ttl=0
+listen-address=0.0.0.0
+bind-dynamic
+no-resolv
+server=1.1.1.1
+domain-needed
+bogus-priv
+log-queries
+\end{lstlisting}
+\end{minipage}\par
+
+\subsection{nginx upstream and proxy (Mac 2, excerpt)}
+\needspace{8\baselineskip}
+\begin{lstlisting}
+upstream backend_pool {
+    server 10.7.26.203:3001 max_fails=1 fail_timeout=10s;
+    server 10.7.18.17:3002  max_fails=1 fail_timeout=10s;
+    keepalive 16;
+}
+server {
+    listen 443 ssl;  http2 on;
+    server_name app.paradise.test api.paradise.test;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    location / {
+        proxy_pass http://backend_pool;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_next_upstream error timeout http_502 http_503 http_504;
+        add_header X-Upstream-Addr $upstream_addr always;
+        add_header X-Edge "nginx@10.7.8.155" always;
+    }
+}
+\end{lstlisting}
+
+\subsection{Backend contract}
+\par\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}
+GET /api/status  ->  200
+{"status":"ok","backend":"A"|"B","team":"paradise","host":...,"port":3001|3002}
+X-Backend: A | B        X-Backend-Port: 3001 | 3002
+Cache-Control: public, max-age=60        ETag: W/"..."   (weak)
+\end{lstlisting}
+\end{minipage}\par
+
+\clearpage
+\section{Phase 2 reference configuration}
 Excerpts from \texttt{evidence/phase2/config-bundle/} (rendered on 23 November 2026). Private keys
 are not included.
 
 \subsection{dnsmasq, primary (Mac 1) and backup (Mac 4)}
 Both files are identical; the backup has no \texttt{server=} line pointing at the primary.
+\par\noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}
 address=/app.paradise.test/10.7.3.123
 address=/api.paradise.test/10.7.3.123
@@ -691,8 +1124,10 @@ domain-needed
 bogus-priv
 log-queries
 \end{lstlisting}
+\end{minipage}\par
 
 \subsection{nginx upstream and failover (Mac 2; identical on the standby, Mac 4)}
+\par\noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}
 upstream backend_pool {
     server 10.7.13.238:3001 max_fails=1 fail_timeout=10s;
@@ -709,21 +1144,26 @@ location / {
     proxy_connect_timeout 2s;
 }
 \end{lstlisting}
+\end{minipage}\par
 
 \subsection{pf anchor \texttt{com.apple/250.ParadiseIsolation} (Mac 3; Mac 4 uses port 3002)}
+\par\noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}
 pass in quick on lo0 all
 pass in quick proto tcp from { 10.7.3.123, 10.7.18.17 } to any port 3001 keep state
 block drop in quick proto tcp from any to any port 3001
 \end{lstlisting}
+\end{minipage}\par
 
 \subsection{Backend keep-alive (\texttt{services/backend/src/server.js})}
+\par\noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}
 server.keepAliveTimeout = 65_000;
 server.headersTimeout   = 66_000;   // must exceed keepAliveTimeout
 \end{lstlisting}
+\end{minipage}\par
 
-\section{Evidence index}
+\section{Phase 2 evidence index}
 \begin{table}[H]
 \centering
 \caption{Where each claim's evidence lives (\texttt{evidence/phase2/} and \texttt{evidence/captures/}).}
@@ -742,5 +1182,4 @@ all & \texttt{verify-phase2-...121147}, \texttt{verify-phase2-...130949}, config
 \bottomrule
 \end{tabular}}
 \end{table}
-
 \end{document}
