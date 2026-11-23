@@ -372,7 +372,7 @@ same query re-sent to the backup in 1.0 s · TTL 30 s with a stale window measur
 at 9 s (11.4 s on the wire), 0 s after a flush · backends FILTERED from clients,
 OPEN from the edge · HA failover **145 requests, 0 errors** · edge cutover with
 zero failed requests · 3 injected faults and 3 real incidents diagnosed layer by
-layer. Full write-up: **[Phase 2 report](docs/phase2/report.md)** · demo-day script for the spec §8 sequence: **[docs/demo-day.md](docs/demo-day.md)**.
+layer. Full write-up: **[Phase 2 report](docs/phase2/report.md)**.
 The Phase 2 section of the [setup guide](docs/index.html#phase2) has per-machine commands.
 
 ### Topology after Phase 2

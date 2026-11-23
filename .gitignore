@@ -78,3 +78,6 @@ evidence/captures/*.pcapng
 .vscode/
 .idea/
 *.swp
+
+# Internal demo-day script — kept locally, not published.
+docs/demo-day.md
