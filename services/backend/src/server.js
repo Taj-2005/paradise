@@ -66,6 +66,15 @@ const server = app.listen(config.port, config.host, () => {
   console.log(`${line}\n`);
 });
 
+// Phase 2 hardening: keep idle keep-alive sockets open LONGER than nginx
+// reuses them (nginx upstream keepalive_timeout = 4s). Node's 5 s default was
+// shorter than nginx's 60 s, so nginx could reuse a socket Node was closing
+// at that moment, causing 502s during the Ext D failover demo. headersTimeout
+// must exceed keepAliveTimeout, or Node closes the socket while nginx is
+// starting its next request.
+server.keepAliveTimeout = 65_000;
+server.headersTimeout = 66_000;
+
 // Clean shutdown so that Ctrl-C during the failure demo drops the listening
 // socket immediately. Without this the port can linger and the "restart
 // Backend A" half of the demo fails with EADDRINUSE on camera.
