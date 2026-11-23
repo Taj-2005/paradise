@@ -159,7 +159,7 @@ uniformly between 0 and 30 s.
 
 **Setup.** On Mac 3 and Mac 4, a pf anchor (`com.apple/250.ParadiseIsolation`)
 passes :3001/:3002 only from the two edges' IPs and `block drop`s everything else.
-The original pf state is kept for rollback (§7).
+The original pf state is kept for rollback (§7). The spec says *only Mac 2*. We also pass the standby edge (Mac 4), because after an Ext E cutover it must reach Backend A. Clients are blocked either way (rendered rules: [config bundle](../../evidence/phase2/config-bundle/README.md)).
 
 | Vantage point | Backend A :3001 | Backend B :3002 | Through the edge by name | Evidence |
 |---|---|---|---|---|
@@ -476,6 +476,7 @@ needs restoring.
 | D | [HA demo](../../evidence/phase2/D-ha-failover/D-ha-demo-20261123-124350.txt) · [D1](../../evidence/phase2/D-ha-failover/D1-steady-state-lb.txt) | — | — |
 | E | [E1](../../evidence/phase2/E-edge-cutover/E1-standby-edge.txt) · the B watch files | `p2-E-two-edges.pcapng`, `p2-BE-ttl-cutover.pcapng` | W-E1, W-B2-E1 |
 | F | 5 × `F-diagnose-*` · 3 × `F-incident*` | `p2-F-middlebox.pcapng` | F-2, F-3 |
+| config | [config bundle](../../evidence/phase2/config-bundle/README.md): rendered dnsmasq (both), nginx (both edges), pf (both backends) | | |
 | all | [verify 12:11](../../evidence/phase2/verify-phase2-20261123-121147.txt) · [verify 13:09](../../evidence/phase2/verify-phase2-20261123-130949.txt) | | |
 
 Captures are in [`evidence/captures/`](../../evidence/captures/); screenshots are in
