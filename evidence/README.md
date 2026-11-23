@@ -27,7 +27,19 @@ make evidence        # run from a CLIENT machine, not Mac 2
 | C3 | Wireshark TLS handshake | `C-wireshark/C3-tls.md` | **you**, after `./scripts/capture.sh tls` |
 | D1 | `curl -sI` caching headers | `D-cache-fail/D1-headers.txt` | `make evidence` |
 | D2 | Explain your Cache-Control | `D-cache-fail/D2-explanation.md` | **you**, in your own words |
-| D3 | Failure demo | `D-cache-fail/D3-failure-demo.txt` | `make demo-fail` |
+| D3 | Failure demos (spec §6.3) | `D-cache-fail/D3-failure-demo-{A,B,C}.txt` | `make demo-fail` |
+
+**Spec §6.3 failure scenarios → evidence:**
+
+| Scenario | Evidence |
+|---|---|
+| Wrong DNS server on a client | `D-cache-fail/D3-failure-demo-B.txt` · Phase 2: `phase2/F-troubleshooting/F-diagnose-20261123-130829.txt` |
+| DNS record points to a wrong IP | Phase 2: `phase2/F-troubleshooting/F-diagnose-20261123-130423.txt` (+ `F-incident3-campus-middlebox.txt`) |
+| One backend stopped | `D-cache-fail/D3-failure-demo-A.txt` · Phase 2: `phase2/D-ha-failover/D-ha-demo-20261123-124350.txt` |
+| Both backends stopped → 502 | `make demo-fail` option D, `D-cache-fail/D3-failure-demo-D.txt` (**not yet recorded**: needs Mac 3 and Mac 4 to stop their backends together) |
+| Wrong destination port | `D-cache-fail/D3-failure-demo-C.txt` |
+
+Phase 2 evidence has its own index: [`phase2/README.md`](phase2/README.md).
 
 ## Rules that cost marks
 
@@ -43,3 +55,9 @@ make evidence        # run from a CLIENT machine, not Mac 2
 
 `captures/*.pcapng` are gitignored — they are large and the form does not ask
 for the file, only your description. Keep them locally for the demo.
+
+## Phase 2 evidence
+
+Phase 2 output lives in [`phase2/`](phase2/README.md), one folder per extension
+(A–F), with a screenshot list, Wireshark capture and display filters, and the
+simulation steps for each. Phase 1 files above are not changed by Phase 2.

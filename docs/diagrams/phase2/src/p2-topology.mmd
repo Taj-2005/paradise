@@ -1,0 +1,62 @@
+---
+title: CN Phase 2 — Resilient topology (dashed = added in Phase 2)
+---
+flowchart TB
+
+  subgraph LAN["Private LAN &mdash; same four Macs as Phase 1, no new hardware"]
+    direction TB
+
+    C["<b>Clients</b><br/>Mac 1 &middot; Mac 3 &middot; Mac 4<br/>resolvers: Mac 1, then Mac 4"]
+
+    DNS1["<b>Mac 1 &middot; Primary DNS</b><br/>dnsmasq &middot; UDP/TCP 53<br/>TTL 0 &rarr; <b>30 s</b> (Ext B)"]
+
+    DNS2["<b>Mac 4 &middot; Backup DNS</b> (Ext A)<br/>dnsmasq &middot; same records<br/>independent &mdash; never forwards to Mac 1"]
+
+    EDGE["<b>Mac 2 &middot; Primary edge</b><br/>nginx &middot; TLS &middot; round robin<br/>X-Edge: nginx@Mac2"]
+
+    SB["<b>Mac 4 &middot; Standby edge</b> (Ext E)<br/>nginx &middot; same config &amp; cert<br/>X-Edge: nginx@Mac4"]
+
+    subgraph PF["pf on each backend (Ext C) &mdash; pass: both edges &middot; everyone else: block drop"]
+      direction LR
+      BA["<b>Mac 3 &middot; Backend A</b><br/>Express &middot; :3001<br/>X-Backend: A"]
+      BB["<b>Mac 4 &middot; Backend B</b><br/>Express &middot; :3002<br/>X-Backend: B"]
+    end
+  end
+
+  C  -- "<b>1 &middot; DNS</b><br/>A? app.paradise.test" --> DNS1
+  C  -. "<b>1b &middot; Mac 1 down</b><br/>next resolver" .-> DNS2
+
+  C  == "<b>2 &middot; HTTPS by name</b><br/>the A record picks the edge" ==> EDGE
+  C  -. "<b>2b &middot; after cutover</b><br/>once the TTL expires" .-> SB
+
+  EDGE -- "<b>3 &middot; proxy_pass</b><br/>max_fails=1 &middot; proxy_next_upstream<br/>dead backend skipped (Ext D)" --> BA
+  EDGE -- "round robin" --> BB
+  SB -.-> BA
+  SB -.-> BB
+
+  classDef dns     fill:#f3ecff,stroke:#7c3aed,stroke-width:2px,color:#1e1b2e
+  classDef dnsnew  fill:#f3ecff,stroke:#7c3aed,stroke-width:2px,stroke-dasharray:6 4,color:#1e1b2e
+  classDef edge    fill:#e8f0ff,stroke:#2563eb,stroke-width:2px,color:#0f172a
+  classDef edgenew fill:#e8f0ff,stroke:#2563eb,stroke-width:2px,stroke-dasharray:6 4,color:#0f172a
+  classDef ba      fill:#e6fbf7,stroke:#0d9488,stroke-width:2px,color:#0f2b28
+  classDef bb      fill:#fdf6e3,stroke:#ca8a04,stroke-width:2px,color:#2b2410
+  classDef cli     fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#0f172a
+
+  class DNS1 dns
+  class DNS2 dnsnew
+  class EDGE edge
+  class SB edgenew
+  class BA ba
+  class BB bb
+  class C cli
+
+  style PF fill:#f1f5f9,stroke:#475569,stroke-width:2px,stroke-dasharray:6 4,color:#0f172a
+
+  linkStyle 0 stroke:#7c3aed,stroke-width:2px
+  linkStyle 1 stroke:#7c3aed,stroke-width:2px,stroke-dasharray:5 4
+  linkStyle 2 stroke:#2563eb,stroke-width:3px
+  linkStyle 3 stroke:#2563eb,stroke-width:2px,stroke-dasharray:5 4
+  linkStyle 4 stroke:#0f766e,stroke-width:2px
+  linkStyle 5 stroke:#0f766e,stroke-width:2px
+  linkStyle 6 stroke:#0f766e,stroke-width:2px,stroke-dasharray:5 4
+  linkStyle 7 stroke:#0f766e,stroke-width:2px,stroke-dasharray:5 4

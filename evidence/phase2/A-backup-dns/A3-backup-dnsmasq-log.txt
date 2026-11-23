@@ -1,0 +1,28 @@
+# Ext A — the BACKUP resolver's own log while the primary (Mac 1) was down
+# machine: 10.7.18.17 (Mac 4, backup DNS)   date: 2026-11-23 12:49:17–12:50:03 IST
+# command: sudo tail -f /opt/homebrew/var/log/dnsmasq.log | grep paradise.test
+#
+# Filtered to the project zone only. The unfiltered log also holds every team
+# member's ordinary internet lookups (forwarded to 1.1.1.1), which are private
+# and irrelevant here.
+#
+# Mac 1's primary dnsmasq was stopped from ~12:47:45 to ~12:49:43 IST
+# (see A2-failover-watch-mac1.txt). During that window Mac 1's own lookups for
+# app.paradise.test land HERE, on the backup, every ~4 s; "config" means the
+# backup answered from its own copy of the record (same data, TTL 30), NOT by
+# forwarding to the primary. After 12:49:41 they stop: the primary is back and
+# is first in every client's resolver list again.
+
+Nov 23 12:49:20 dnsmasq[31194]: query[A] app.paradise.test from 10.7.20.228
+Nov 23 12:49:20 dnsmasq[31194]: config app.paradise.test is 10.7.3.123
+Nov 23 12:49:25 dnsmasq[31194]: query[A] app.paradise.test from 10.7.20.228
+Nov 23 12:49:25 dnsmasq[31194]: config app.paradise.test is 10.7.3.123
+Nov 23 12:49:29 dnsmasq[31194]: query[A] app.paradise.test from 10.7.20.228
+Nov 23 12:49:29 dnsmasq[31194]: config app.paradise.test is 10.7.3.123
+Nov 23 12:49:33 dnsmasq[31194]: query[A] app.paradise.test from 10.7.20.228
+Nov 23 12:49:33 dnsmasq[31194]: config app.paradise.test is 10.7.3.123
+Nov 23 12:49:37 dnsmasq[31194]: query[A] app.paradise.test from 10.7.20.228
+Nov 23 12:49:37 dnsmasq[31194]: config app.paradise.test is 10.7.3.123
+Nov 23 12:49:41 dnsmasq[31194]: query[A] app.paradise.test from 10.7.20.228
+Nov 23 12:49:41 dnsmasq[31194]: config app.paradise.test is 10.7.3.123
+# (no further app.paradise.test queries reach the backup after 12:49:41)

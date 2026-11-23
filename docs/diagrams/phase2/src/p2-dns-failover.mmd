@@ -1,0 +1,36 @@
+---
+title: CN Phase 2 — Ext A · Backup DNS failover
+---
+sequenceDiagram
+  autonumber
+  participant C as Client<br/>Mac 3
+  participant P as Primary DNS<br/>Mac 1 · dnsmasq
+  participant B as Backup DNS<br/>Mac 4 · dnsmasq
+  participant E as Edge<br/>Mac 2 · nginx
+
+  Note over C,E: Client resolver list (networksetup): Mac 1, then Mac 4
+
+  rect rgba(124, 58, 237, 0.10)
+    Note over C,B: NORMAL — the first resolver answers
+    C ->> P: Standard query A  app.paradise.test<br/>client:ephemeral → 53 (UDP)
+    P -->> C: A → Mac 2, TTL 30
+    Note right of B: Backup idle, holding its own<br/>copy of the same records
+  end
+
+  Note over P: make p2-dns-stop<br/>dnsmasq stopped — the HOST is still up
+
+  rect rgba(220, 38, 38, 0.10)
+    Note over C,B: PRIMARY DOWN — the client falls through
+    C ->> P: Standard query A  app.paradise.test
+    P -->> C: ICMP port unreachable<br/>dig: "communications error … connection refused"
+    C ->> B: Same query → next resolver in the list
+    B -->> C: A → Mac 2, TTL 30<br/>dig reports SERVER = Mac 4
+  end
+
+  rect rgba(37, 99, 235, 0.10)
+    Note over C,E: The service is unaffected — DNS only finds the IP
+    C ->> E: TCP handshake · TLS · GET /api/status
+    E -->> C: 200 OK
+  end
+
+  Note over C,E: DNS failure ≠ application failure.<br/>Both resolvers down → "Could not resolve host", yet ping to Mac 2 still works.<br/>Backends down → dig works, TLS works, nginx answers 502.

@@ -58,6 +58,14 @@ evidence/captures/*.pcapng
 !evidence/captures/dns-1.pcapng
 !evidence/captures/dns-2.pcapng
 !evidence/captures/.gitkeep
+# Phase 2: each scoped at capture time (BPF filter) and ≤1.5 MB. Kept unscoped
+# afterwards so the frame numbers quoted in the Wireshark screenshots still match.
+!evidence/captures/p2-A-dns-failover.pcapng
+!evidence/captures/p2-B-ttl.pcapng
+!evidence/captures/p2-BE-ttl-cutover.pcapng
+!evidence/captures/p2-C-isolation.pcapng
+!evidence/captures/p2-E-two-edges.pcapng
+!evidence/captures/p2-F-middlebox.pcapng
 !evidence/captures/README.md
 
 # ── macOS ────────────────────────────────────────────────────────────────────
@@ -70,3 +78,6 @@ evidence/captures/*.pcapng
 .vscode/
 .idea/
 *.swp
+
+# Internal demo-day script — kept locally, not published.
+docs/demo-day.md

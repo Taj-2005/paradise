@@ -1,0 +1,54 @@
+# REAL INCIDENT 1 (not injected) — primary edge unreachable at the transport layer
+# Found during an Ext D rehearsal, 2026-11-23 12:27 IST. Kept as Ext F evidence.
+#
+# Symptom   : every request HTTP 000 (curl timed out), from request #1 — before
+#             anyone touched Backend A, so the HA demo itself was not the cause.
+# Diagnosis from Mac 1, top down:
+#   DNS        ✓ app.paradise.test -> 10.7.3.123
+#   IP (ping)  ✓ replies, but RTT ~800 ms (normally 5–20 ms on this LAN)
+#   TCP :443   ✗ TIMED OUT — no SYN-ACK and no RST  => something DROPS packets
+#   TCP :80    ✗ timed out as well
+#   standby edge 10.7.18.17:443 ✓ connects, HTTP 200 => client, LAN and backends fine
+# Verdict   : transport layer, Mac 2 only (filtered, not closed).
+# Root cause: Mac 2 had gone to sleep. A sleeping Mac's Wi-Fi still answers ping
+#             (slowly, power-save) while nginx is frozen, so ICMP succeeds and TCP
+#             times out. Confirmed by Anushka; `caffeinate -dims` on Mac 2, RTT
+#             back to ~20 ms, :443 connects.
+# Lesson    : "ping works" proves layer 3 only. Timeout vs refused separates a
+#             dropping host/firewall from a closed port. Testing the standby edge
+#             isolated the fault to one machine in one command.
+#
+# Raw ha-demo output of that run follows (every line HTTP 000).
+
+  3s  #1    HTTP 000  X-Backend: -   upstream=-
+  7s  #2    HTTP 000  X-Backend: -   upstream=-
+ 10s  #3    HTTP 000  X-Backend: -   upstream=-
+ 14s  #4    HTTP 000  X-Backend: -   upstream=-
+ 17s  #5    HTTP 000  X-Backend: -   upstream=-
+ 21s  #6    HTTP 000  X-Backend: -   upstream=-
+ 24s  #7    HTTP 000  X-Backend: -   upstream=-
+ 28s  #8    HTTP 000  X-Backend: -   upstream=-
+ 32s  #9    HTTP 000  X-Backend: -   upstream=-
+ 35s  #10   HTTP 000  X-Backend: -   upstream=-
+ 39s  #11   HTTP 000  X-Backend: -   upstream=-
+ 42s  #12   HTTP 000  X-Backend: -   upstream=-
+ 46s  #13   HTTP 000  X-Backend: -   upstream=-
+ 50s  #14   HTTP 000  X-Backend: -   upstream=-
+ 53s  #15   HTTP 000  X-Backend: -   upstream=-
+ 57s  #16   HTTP 000  X-Backend: -   upstream=-
+ 60s  #17   HTTP 000  X-Backend: -   upstream=-
+ 64s  #18   HTTP 000  X-Backend: -   upstream=-
+ 67s  #19   HTTP 000  X-Backend: -   upstream=-
+ 71s  #20   HTTP 000  X-Backend: -   upstream=-
+ 75s  #21   HTTP 000  X-Backend: -   upstream=-
+ 78s  #22   HTTP 000  X-Backend: -   upstream=-
+ 82s  #23   HTTP 000  X-Backend: -   upstream=-
+ 85s  #24   HTTP 000  X-Backend: -   upstream=-
+ 89s  #25   HTTP 000  X-Backend: -   upstream=-
+ 93s  #26   HTTP 000  X-Backend: -   upstream=-
+ 96s  #27   HTTP 000  X-Backend: -   upstream=-
+100s  #28   HTTP 000  X-Backend: -   upstream=-
+
+Requests: 28   Backend A: 0   Backend B: 0   non-200: 28   retried off A: 0
+Sequence: xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+Last 10 : xxxxxxxxxx

@@ -1,0 +1,182 @@
+# REAL INCIDENT 2 (not injected) — 502s during HA failover: nginx/Node keep-alive race
+# Found during an Ext D run, 2026-11-23 12:30:40 IST. Fixed, then Ext D re-run clean
+# (D-ha-failover/D-ha-demo-20261123-124350.txt: 145 requests, 0 non-200).
+#
+# Symptom   : Backend A stopped at ~15 s -> six HTTP 502 between 15 s and 24 s,
+#             although Backend B was running the whole time.
+# Evidence  : request #22  upstream=10.7.18.17:3002, 10.7.13.238:3001, backend_pool
+#             = nginx tried B FIRST and B failed, then A (dead), then nothing left.
+#             Later 502s: upstream=backend_pool = "no live upstreams".
+# Edge error log (Mac 2, paradise-error.log):
+#   12:30:54 upstream prematurely closed connection while reading response header
+#            from upstream ... upstream: "http://10.7.18.17:3002/api/status"
+#   12:30:54 upstream server temporarily disabled ... 10.7.18.17:3002
+#   12:30:55 no live upstreams while connecting to upstream ... backend_pool
+#   (same "prematurely closed" on B at 12:21:39 and "reset by peer" on A at
+#    12:32:10 — it happened in steady state too, invisibly, because the retry
+#    landed on the other healthy backend)
+# Root cause: two idle timers on one TCP connection, in the wrong order.
+#   nginx upstream keepalive_timeout = 60 s (default)  — reuses idle sockets
+#   Node 22 server.keepAliveTimeout  =  5 s (default)  — closes idle sockets
+#   nginx sent a request down a socket Node was closing at that instant. With A
+#   dead, that one failure on B plus max_fails=1 ejected the LAST healthy peer
+#   for fail_timeout=10s -> every request in that window got 502.
+# Fix       : nginx  keepalive_timeout 4s  (site.conf.template, upstream block)
+#             Node   keepAliveTimeout 65 s, headersTimeout 66 s (server.js)
+#             Rule: the side that REUSES a connection must drop it before the
+#             side that CLOSES it.
+# Layer     : transport (connection lifetime), surfacing as an application 502.
+#
+# Raw ha-demo output of the failing run follows.
+
+  0s  #1    HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+  0s  #2    HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+  1s  #3    HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+  2s  #4    HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+  3s  #5    HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+  4s  #6    HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+  4s  #7    HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+  5s  #8    HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+  6s  #9    HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+  6s  #10   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+  7s  #11   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+  8s  #12   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+  9s  #13   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+  9s  #14   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 10s  #15   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 11s  #16   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 11s  #17   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 12s  #18   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 13s  #19   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 13s  #20   HTTP 200  X-Backend: B   upstream=10.7.13.238:3001, 10.7.18.17:3002
+ 14s  #21   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 15s  #22   HTTP 502  X-Backend: -   upstream=10.7.18.17:3002, 10.7.13.238:3001, backend_pool
+ 15s  #23   HTTP 502  X-Backend: -   upstream=backend_pool
+ 16s  #24   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 17s  #25   HTTP 200  X-Backend: B   upstream=10.7.13.238:3001, 10.7.18.17:3002
+ 17s  #26   HTTP 502  X-Backend: -   upstream=backend_pool
+ 18s  #27   HTTP 200  X-Backend: B   upstream=10.7.13.238:3001, 10.7.18.17:3002
+ 19s  #28   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 19s  #29   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 20s  #30   HTTP 502  X-Backend: -   upstream=backend_pool
+ 21s  #31   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 21s  #32   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 22s  #33   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 23s  #34   HTTP 200  X-Backend: B   upstream=10.7.13.238:3001, 10.7.18.17:3002
+ 23s  #35   HTTP 502  X-Backend: -   upstream=backend_pool
+ 24s  #36   HTTP 502  X-Backend: -   upstream=backend_pool
+ 25s  #37   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 26s  #38   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 26s  #39   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 27s  #40   HTTP 200  X-Backend: B   upstream=10.7.13.238:3001, 10.7.18.17:3002
+ 28s  #41   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 28s  #42   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 29s  #43   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 30s  #44   HTTP 200  X-Backend: B   upstream=10.7.13.238:3001, 10.7.18.17:3002
+ 30s  #45   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 31s  #46   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 32s  #47   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 32s  #48   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 33s  #49   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 34s  #50   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 35s  #51   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 35s  #52   HTTP 200  X-Backend: B   upstream=10.7.13.238:3001, 10.7.18.17:3002
+ 36s  #53   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 37s  #54   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 37s  #55   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 38s  #56   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 39s  #57   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 39s  #58   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 40s  #59   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 41s  #60   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 42s  #61   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 42s  #62   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 43s  #63   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 44s  #64   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 44s  #65   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 45s  #66   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 46s  #67   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 46s  #68   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 47s  #69   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 48s  #70   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 48s  #71   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 49s  #72   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 50s  #73   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 50s  #74   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 51s  #75   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 52s  #76   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 52s  #77   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 53s  #78   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 53s  #79   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 54s  #80   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 55s  #81   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 56s  #82   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 56s  #83   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 57s  #84   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 58s  #85   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 58s  #86   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 59s  #87   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 60s  #88   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 60s  #89   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 61s  #90   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 62s  #91   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 62s  #92   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 63s  #93   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 64s  #94   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 64s  #95   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 65s  #96   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 66s  #97   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 67s  #98   HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 67s  #99   HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 68s  #100  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 69s  #101  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 69s  #102  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 70s  #103  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 71s  #104  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 71s  #105  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 72s  #106  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 72s  #107  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 73s  #108  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 74s  #109  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 75s  #110  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 75s  #111  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 76s  #112  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 77s  #113  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 77s  #114  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 78s  #115  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 79s  #116  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 79s  #117  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 80s  #118  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 81s  #119  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 81s  #120  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 82s  #121  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 83s  #122  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 84s  #123  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 84s  #124  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 85s  #125  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 85s  #126  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 86s  #127  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 87s  #128  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 87s  #129  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 88s  #130  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 89s  #131  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 89s  #132  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 90s  #133  HTTP 200  X-Backend: B   upstream=10.7.13.238:3001, 10.7.18.17:3002
+ 91s  #134  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 92s  #135  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 92s  #136  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 93s  #137  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 94s  #138  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 94s  #139  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 95s  #140  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 95s  #141  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 96s  #142  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 97s  #143  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+ 97s  #144  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 98s  #145  HTTP 200  X-Backend: B   upstream=10.7.18.17:3002
+ 99s  #146  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+100s  #147  HTTP 200  X-Backend: A   upstream=10.7.13.238:3001
+
+Requests: 147   Backend A: 49   Backend B: 92   non-200: 6   retried off A: 9
+Sequence: BABBBABABABABBBAAABBBxxBBxBBBxBBBBxxBBBBBBBBBBBBBBBBBBBBBBBBBBBBABBBABAAAABABBABABBABAAABABABBBAABABAABBABBABBAABABAABBABBBAAAABBBAABBBAABABBAABBAA
+Last 10 : BABBAABBAA

@@ -1,0 +1,94 @@
+# Ext A — backup DNS failover, watched from Mac 1 (client) every 2 s
+# machine: 10.7.20.228 (mac1-dns)   date: 2026-11-23 12:46:32 IST
+# resolvers (Wi-Fi): 10.7.20.228 10.7.18.17 
+# each line: what the primary says directly | what a normal lookup (resolver list) got and from which server
+
+  0s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+  2s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+  4s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+  6s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+  8s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 10s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 12s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 14s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 17s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 19s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 21s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 23s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 25s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 27s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 29s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 31s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 33s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 35s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 37s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 39s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 41s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 43s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 45s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 48s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 50s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 52s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 54s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 56s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 58s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 60s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 62s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 64s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 66s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 68s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 70s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 72s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+ 74s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+ 79s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+ 83s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+ 87s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+ 91s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+ 95s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+100s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+104s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+108s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+112s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+116s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+120s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+124s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+129s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+133s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+137s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+141s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+145s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+149s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+154s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+158s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+162s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+166s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+170s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+175s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+179s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+183s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+187s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.18.17
+191s  primary@10.7.20.228: DOWN (timed out)           | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+194s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+196s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+199s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+201s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+203s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+205s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+207s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+209s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+211s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+213s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+215s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+217s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+219s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+221s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+223s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+225s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+228s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+230s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+232s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+234s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+236s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+238s  primary@10.7.20.228: 10.7.3.123                 | lookup: 10.7.3.123 (TTL 30)    SERVER 10.7.20.228
+
+Capture: evidence/captures/p2-A-dns-failover.pcapng

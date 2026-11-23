@@ -63,3 +63,16 @@ generates the dark variant by swapping colours through
 renders with `src/theme/dark.json`.
 
 One source of truth, without making the `.mmd` unreadable to other tools.
+
+## Phase 2 diagrams
+
+Phase 2 diagrams live in [`phase2/`](phase2/) (sources in `phase2/src/`):
+`p2-topology`, `p2-dns-failover`, `p2-ttl-cutover`, `p2-ha-failover`. They are
+rendered by `scripts/phase2/build-diagrams.sh` with **these same** theme and
+palette files, and inlined by `scripts/phase2/inline-diagrams.sh` into the
+`<!-- DIAGRAM:p2-… -->` markers only — so the Phase 1 scripts and the Phase 2
+scripts never overwrite each other.
+
+```bash
+make p2-diagrams        # render + inline, Phase 2 only
+```

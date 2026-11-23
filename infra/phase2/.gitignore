@@ -1,0 +1,11 @@
+# Rendered profiles + per-machine state (backups, pf tokens, edge target).
+# Regenerate with `make p2-render`; never commit — they carry real IPs.
+build/
+
+# The standby edge's copy of Mac 2's certificate and PRIVATE KEY.
+certs/*
+!certs/.gitkeep
+!certs/README.md
+
+# Local overrides (real IPs). The .example is committed.
+.env.phase2

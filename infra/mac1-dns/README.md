@@ -55,8 +55,16 @@ sudo cp /opt/homebrew/etc/dnsmasq.conf.orig /opt/homebrew/etc/dnsmasq.conf
 
 `install.sh` saves that `.orig` backup the first time it runs.
 
-## Phase 2 hooks (do not build yet)
+## Phase 2 (built — see [`docs/phase2/`](../../docs/phase2/README.md))
 
-- **Extension A — backup resolver:** same config on a second Mac; clients list both.
-- **Extension B — TTL:** set `DNS_TTL=30` in `.env`, re-render, restart. Change a
-  record and watch clients keep the stale answer until the TTL expires.
+Phase 2 reuses this folder's `dnsmasq.conf.template` unchanged; nothing here was
+edited. It renders the template with overrides into `infra/phase2/build/`:
+
+- **Extension A — backup resolver:** the same template rendered for Mac 4
+  (`make p2-backup-dns` on Mac 4). Independent: it never forwards `.test` to
+  Mac 1, so it survives Mac 1 failing. Clients list both (`make p2-client-dns`).
+- **Extension B — TTL:** `make p2-primary-dns` on this Mac installs the same
+  template with `DNS_TTL=30` (`.env` is not edited). `make p2-cutover TO=standby`
+  changes the record; `make p2-ttl-watch` on a client shows the stale window.
+- **Rollback:** `make p2-rollback WHAT=primary-dns` re-runs *this folder's*
+  `install.sh`, restoring the exact Phase 1 config (TTL 0).
