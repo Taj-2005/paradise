@@ -27,6 +27,17 @@ upstream backend_pool {
     # <-> edge and edge <-> backend connections are entirely separate TCP
     # sessions with their own handshakes, ports and lifetimes.
     keepalive 16;
+
+    # Phase 2 hardening: drop an idle upstream connection BEFORE the backend
+    # does. Node closes idle keep-alive sockets after 5 s (server.keepAliveTimeout);
+    # nginx's default here is 60 s. With nginx's timer longer, a worker could
+    # send a request down a socket Node was closing at that instant ->
+    # "upstream prematurely closed connection". Harmless while both backends are
+    # up (the retry lands on the other one), but with one backend dead the retry
+    # had nowhere to go, and max_fails=1 then ejected the LAST healthy peer:
+    # ~10 s of "no live upstreams" 502s in the Ext D demo. Rule: the side that
+    # REUSES a connection must give up on it before the side that CLOSES it.
+    keepalive_timeout 4s;
 }
 
 # ── Port 80 — redirect everything to HTTPS ─────────────────────────────────
