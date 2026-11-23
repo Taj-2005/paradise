@@ -81,3 +81,6 @@ evidence/captures/*.pcapng
 
 # Internal demo-day script — kept locally, not published.
 docs/demo-day.md
+
+# Deck build script — kept locally, not published.
+presentation/build_deck.py
