@@ -59,9 +59,19 @@ if command -v nginx >/dev/null 2>&1 && [[ -f "$P2_CERT_DIR/$APP_DOMAIN.crt" ]]; 
   rm -rf "$tmpc"
 else info "nginx -t skipped (needs nginx + infra/phase2/certs — run on the standby Mac)"; fi
 
-step "5 · Phase 1 untouched"
+step "5 · Phase 1 untouched (except the declared keep-alive hardening)"
+# Two Phase 1 files carry ONE deliberate Phase 2 change each: the keep-alive
+# timer ordering that removed the Ext D 502s (docs/phase2/report.md, "Keep-alive
+# race"). They are excluded from the diff check below, and instead asserted to
+# contain exactly that hardening — so any OTHER edit to Phase 1 still fails.
+HARDENED_NGX="infra/mac2-edge/nginx/conf.d/site.conf.template"
+HARDENED_NODE="services/backend/src/server.js"
+check "edge reuses upstream sockets for less time than Node keeps them (keepalive_timeout 4s)" \
+  grep -qE '^\s*keepalive_timeout 4s;' "$REPO_ROOT/$HARDENED_NGX"
+check "backends keep idle sockets 65 s, headersTimeout above it" \
+  bash -c "grep -q 'keepAliveTimeout = 65_000' '$REPO_ROOT/$HARDENED_NODE' && grep -q 'headersTimeout = 66_000' '$REPO_ROOT/$HARDENED_NODE'"
 if git -C "$REPO_ROOT" rev-parse >/dev/null 2>&1; then
-  changed="$(git -C "$REPO_ROOT" status --porcelain -- infra services scripts .env.example ':!infra/phase2' ':!scripts/phase2' ':!*.md' 2>/dev/null || true)"
+  changed="$(git -C "$REPO_ROOT" status --porcelain -- infra services scripts .env.example ':!infra/phase2' ':!scripts/phase2' ':!*.md' ":!$HARDENED_NGX" ":!$HARDENED_NODE" 2>/dev/null || true)"
   check "no Phase 1 CODE changes under infra/ services/ scripts/ (phase2/ and *.md docs excluded)" test -z "$changed"
   [[ -n "$changed" ]] && printf '%s\n' "$changed" | sed 's/^/      /'
 else info "not a git checkout — skipped"; fi
