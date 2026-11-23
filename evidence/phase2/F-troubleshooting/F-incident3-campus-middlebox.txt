@@ -1,0 +1,30 @@
+# REAL FINDING 3 — the campus gateway answers TCP for addresses that do not exist
+# machine: 10.7.20.228 (Mac 1)   date: 2026-11-23 13:10 IST
+# capture: evidence/captures/p2-F-middlebox.pcapng
+#
+# Seen while diagnosing the injected fault dns-wrong-ip (F-diagnose-20261123-130423.txt):
+#   2 · Network   ✗ ping 10.255.255.1 fails
+#   3 · Transport ✓ TCP handshake to :443 completes   <- for a host that does not exist
+#   4 · TLS       ✗ TLS handshake failed (curl 35)
+#
+# Probe from Mac 1 (no such hosts on the LAN):
+$ nc -z -G 3 <ip> <port>
+  10.255.255.1:443 -> succeeded      10.255.255.2:443 -> succeeded
+  10.255.255.1:80  -> succeeded      10.255.255.2:80  -> succeeded
+  10.255.255.1:22  -> timed out      10.255.255.2:22  -> timed out
+$ ping -c2 10.255.255.1          -> 100% packet loss
+$ curl --resolve app.paradise.test:443:10.255.255.1 https://app.paradise.test/
+  curl: (35) Recv failure: Connection reset by peer
+$ route -n get 10.255.255.1      -> gateway: 10.7.0.1, interface: en0
+
+# Packets (tshark, p2-F-middlebox.pcapng):
+#   10.7.20.228 -> 10.255.255.1  SYN        :443   IP TTL 64
+#   10.255.255.1 -> 10.7.20.228  SYN, ACK          IP TTL 63   <- one hop: the gateway
+#   ... same for :80; for :22 only our SYN retransmissions, no reply
+#
+# Conclusion: the college gateway (10.7.0.1) runs a transparent proxy/firewall that
+# completes the TCP handshake for ANY off-LAN address on web ports, then resets the
+# TLS. A reply TTL of 63 (not 64) places the responder one hop away — the gateway,
+# not a real host. Lesson for Ext F: a passing TCP check proves that SOMETHING
+# answered, not that the intended server did. Read the first failing layer (here
+# DNS: the record points at a non-edge IP), and treat later "passes" with care.
