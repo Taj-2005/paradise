@@ -8,6 +8,15 @@ source "$(dirname "$0")/lib/p2common.sh"
 load_p2_env
 
 ev_open "verify-phase2-$(date +%Y%m%d-%H%M%S).txt" "Phase 2 acceptance (verify-phase2.sh)"
+
+# Mirror every check line into the evidence file as well as the screen, so the
+# saved file shows WHICH checks passed, not only the final tally. (Shadowing the
+# print helpers keeps PASS_COUNT in this shell; a `| tee` would lose it.)
+ok()   { printf '%s✓%s %s\n' "$C_GRN" "$C_OFF" "$*";      printf '✓ %s\n' "$*" | _ev_strip >> "$EV_FILE"; }
+err()  { printf '%s✗%s %s\n' "$C_RED" "$C_OFF" "$*" >&2; printf '✗ %s\n' "$*" | _ev_strip >> "$EV_FILE"; }
+info() { printf '%s→%s %s\n' "$C_BLU" "$C_OFF" "$*";      printf '→ %s\n' "$*" | _ev_strip >> "$EV_FILE"; }
+step() { printf '\n%s%s%s\n' "$C_BLD" "$*" "$C_OFF";     printf '\n%s\n' "$*" >> "$EV_FILE"; }
+
 hdr "Phase 2 verification from $(my_ip) ($(my_role))"
 is_edge && warn "Run this from a client, not the edge — Ext C expects a NON-edge vantage point."
 
