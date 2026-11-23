@@ -26,13 +26,15 @@ PLAN
 read -rp "  Press Enter to start the traffic… " _
 
 start=$(date +%s); end=$(( start + DURATION ))
-seq_all=""; bad=0; n=0; a=0; b=0
+seq_all=""; bad=0; n=0; a=0; b=0; retried=0
 while (( $(date +%s) < end )); do
   one_request "$APP_URL/api/status"
   n=$((n+1)); t=$(( $(date +%s) - start ))
   case "$REQ_BACKEND" in A) a=$((a+1));; B) b=$((b+1));; esac
   [[ "$REQ_CODE" == 200 ]] || bad=$((bad+1))
   seq_all="$seq_all${REQ_BACKEND:-x}"
+  # "A:3001, B:3002" in $upstream_addr = nginx tried A, it failed, retried on B.
+  [[ "${REQ_UPSTREAM:-}" == *":$BACKEND_A_PORT, "* ]] && retried=$((retried+1))
   col="$C_GRN"; [[ "$REQ_CODE" == 200 ]] || col="$C_RED"
   # One request per tick, and everything read from THAT response: a second
   # request per loop would pair up with round robin and pin /api/status to
@@ -43,14 +45,17 @@ done
 
 tail10="${seq_all: -10}"
 ev_note ""
-ev_note "Requests: $n   Backend A: $a   Backend B: $b   non-200: $bad"
+ev_note "Requests: $n   Backend A: $a   Backend B: $b   non-200: $bad   retried off A: $retried"
 ev_note "Sequence: $seq_all"
 ev_note "Last 10 : $tail10"
 ev_close
 
 check              "service never failed (zero non-200 responses)" test "$bad" -eq 0
 check_contains     "Backend B carried traffic"                       "$seq_all" "B"
-check_contains     "an outage window was B-only (BBBB… seen)"       "$seq_all" "BBBBB"
+# Round robin alone produces B-runs of 4–5 by chance, so a short run proves
+# nothing. Require ~10 s of B-only AND nginx itself recording a failed try on A.
+check_contains     "an outage window was B-only (15+ consecutive B)" "$seq_all" "BBBBBBBBBBBBBBB"
+check              "nginx saw Backend A fail and retried on B ($retried times)" test "$retried" -gt 0
 check_contains     "Backend A back in rotation at the end"           "$tail10" "A"
 check_contains     "Backend B still in rotation at the end"          "$tail10" "B"
 p2_summary "Extension D HA failover"
