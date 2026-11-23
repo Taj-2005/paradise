@@ -366,6 +366,13 @@ every Phase 1 template, script and `.env` value. Each Phase 2 file lives in a
 | [`evidence/phase2/`](evidence/phase2/README.md) | demo + verification output |
 
 Quick check: `make p2-test` (offline), then `make p2-verify` from a client.
+
+**Results (live run, 23 Nov 2026):** `p2-verify` **20/20** · DNS failover with the
+same query re-sent to the backup in 1.0 s · TTL 30 s with a stale window measured
+at 9 s (11.4 s on the wire), 0 s after a flush · backends FILTERED from clients,
+OPEN from the edge · HA failover **145 requests, 0 errors** · edge cutover with
+zero failed requests · 3 injected faults and 3 real incidents diagnosed layer by
+layer. Full write-up: **[Phase 2 report](docs/phase2/report.md)**.
 The Phase 2 section of the [setup guide](docs/index.html#phase2) has per-machine commands.
 
 ### Topology after Phase 2
@@ -424,10 +431,14 @@ The Phase 2 section of the [setup guide](docs/index.html#phase2) has per-machine
 
 **Phase 1:** Tasks A–G, Review 1 (50 marks: 40 team + 10 individual viva).
 **Phase 2:** Extensions A–F, Review 2 (50 marks), in the `phase2/` subfolders
-described above. Phase 1 code is unchanged; the only edits outside the
-`phase2/` folders are documentation (this README, the setup guide, Phase 2
-pointers in two machine READMEs and the diagrams README) and a five-line `p2`
-delegation at the end of the `Makefile`.
+described above. Outside the `phase2/` folders, Phase 2 changed documentation
+(this README, the setup guide, Phase 2 pointers in two machine READMEs and the
+diagrams README), a five-line `p2` delegation at the end of the `Makefile`, and
+**one hardening fix in two Phase 1 files**: the edge ↔ backend keep-alive timer
+order (`keepalive_timeout 4s` in the nginx upstream, `keepAliveTimeout 65 s` in
+the backend). That fix removed 502s found during the Ext D failover test
+([report §3.2](docs/phase2/report.md#32-real-incidents-found-while-running-the-demos)).
+`make p2-test` asserts those exact values and fails on any other Phase 1 change.
 
 Explanations stay inside **Weeks 1–6** of the syllabus — the mid-semester scope.
 Subnetting, NAT, DHCP, IPv6, routing algorithms, ARP/Ethernet framing and Wi-Fi

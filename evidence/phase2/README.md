@@ -14,6 +14,41 @@ into the report. Phase 1 evidence in `evidence/A-…`–`D-…` is untouched.
 | `F-troubleshooting/` | F diagnosis | `make p2-diagnose` | client |
 | `verify-phase2-*.txt` | all | `make p2-verify` | client |
 
+## Collected: live run, 23 Nov 2026
+
+Every file below is real output. Results and the story behind each are in
+[docs/phase2/report.md](../../docs/phase2/report.md).
+
+| Ext | Files | Captured by | Headline |
+|---|---|---|---|
+| A | `A-failover-demo.txt` (Mac 3) · `A1-…` · `A2-failover-watch-mac1.txt` · `A3-backup-dnsmasq-log.txt` (Mac 4, filtered to `paradise.test`) | Tajuddin, Nipun, Omkar | primary down 12:47:46–12:49:43, every lookup answered by 10.7.18.17 |
+| B | `B1-…` · `ttl-watch-20261123-125354.txt` (TTL expiry, both directions) · `ttl-watch-20261123-125757.txt` (with flush) | Nipun | stale 9 s without a flush, 0–2 s with one |
+| C | `C-probe-from-10.7.20.228.txt` (FILTERED) · `C-probe-from-10.7.3.123.txt` (OPEN) · `C1-…` | Nipun, Anushka | same pf rules, two vantage points |
+| D | `D-ha-demo-20261123-124350.txt` · `D1-…` | Nipun (client), Tajuddin (stopped A) | 145 requests, 0 non-200, 9 retries off A |
+| E | `E1-standby-edge.txt` + the B watch files | Nipun, Omkar | `X-Edge` moved to `nginx@10.7.18.17`, no failed request |
+| F | `F-diagnose-*` (5 runs) · `F-incident1/2/3-*` (real incidents, not injected) | Nipun, Anushka | DNS / Transport / DNS-config verdicts, all correct |
+| all | `verify-phase2-20261123-121147.txt` (before) · `…-130949.txt` (after) | Nipun | 20/20 both times |
+
+**Captures** (`evidence/captures/`, committed; frame numbers match the
+screenshots): `p2-A-dns-failover`, `p2-B-ttl`, `p2-BE-ttl-cutover`,
+`p2-C-isolation`, `p2-E-two-edges`, `p2-F-middlebox` (all `.pcapng`).
+
+**Screenshots** (`screenshots/`):
+
+| File | Shows |
+|---|---|
+| `W-A1-query-to-primary-unanswered.png` | frame 230, ID `0x90b0` to the primary, no response |
+| `W-A2-same-id-retried-on-backup.png` | frames 232–233, the same ID re-sent to 10.7.18.17 and answered |
+| `W-B1-ttl-30-in-answer.png` | TTL column = 30 on answers from both servers |
+| `W-B2-E1-dns-flips-then-clienthello-moves.png` | DNS answer flips at frame 1002; ClientHellos keep going to the old edge until frame 1195 |
+| `W-C1-syn-retransmissions-filtered.png` | 5 SYNs per backend port, no SYN-ACK, no RST |
+| `W-E1-clienthello-both-edges.png` | same SNI, TLS 1.3 to both edges |
+| `F-2-edge-down-verdict.png` · `F-3-client-dns-wrong-verdict.png` | diagnose verdicts for two injected faults |
+
+Not yet in the folder: the teammates' own terminal screenshots (Ext A on Mac 3,
+the Mac 4 dnsmasq log, `p2-health-watch` on Mac 2). Add them as
+`<Ext>-<n>-<what>.png` when they're shared.
+
 ## What to capture for each extension
 
 Two kinds of proof: **terminal output** (`.txt`, written by the scripts, no
