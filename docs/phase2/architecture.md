@@ -28,6 +28,7 @@ All four are also inlined in the Phase 2 section of [`docs/index.html`](../index
 | Client resolvers | Mac 1 | Mac 1, then Mac 4 | VPC resolver + fallback |
 | Backend reachability | anyone on the LAN | only the edges (pf `block drop`) | Security Group: inbound from the ALB SG only |
 | Backend failure | passive `max_fails` | unchanged, plus a live health view | ALB target health checks |
+| Edge ↔ backend keep-alive | nginx reuses idle sockets 60 s, Node closes them at 5 s | nginx drops them at **4 s**, Node keeps them **65 s** | ALB idle timeout shorter than the target's keep-alive |
 | Edge | one (Mac 2) | primary + standby, chosen by DNS | multi-region ALB + Route 53 failover |
 
 ## Design decisions
@@ -55,6 +56,23 @@ nginx Plus feature. Open-source nginx detects failure from real traffic:
 zero errors. `make p2-health-watch` shows the backend state live without
 sending traffic through nginx, because its own requests would disturb the
 round-robin order seen by clients.
+
+**The reusing side times out first (keep-alive ordering).** This was not in
+the original design. We found it during an Ext D run. With Backend A stopped,
+six requests got 502 even though Backend B was up. The edge error log showed
+`upstream prematurely closed connection` on B: nginx (upstream
+`keepalive_timeout` default 60 s) had sent a request down an idle socket that
+Node (`server.keepAliveTimeout` default 5 s) was closing at that instant.
+While both backends are up, that one failure is retried on the other backend
+and nobody notices. With A dead, the retry had nowhere to go, and
+`max_fails=1` then ejected B, the last healthy peer, for 10 s (`no live
+upstreams`). The fix orders the two timers: nginx gives up on an idle socket at
+**4 s**, and Node keeps it for **65 s** (`headersTimeout` 66 s, which must be
+above `keepAliveTimeout`). These two lines are the only Phase 1 files Phase 2
+edits, and `make p2-test` asserts exactly them. After the fix, the same demo ran
+145 requests with 0 errors. AWS documents the same rule for ALB: the target's
+keep-alive must be longer than the load balancer's idle timeout. Full write-up:
+[report §3.2](report.md#32-real-incidents-found-while-running-the-demos).
 
 **The standby edge reuses the certificate.** Clients connect by name, the
 SAN covers it, and the CA is already trusted on every Mac. There is no new
