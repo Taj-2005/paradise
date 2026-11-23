@@ -35,10 +35,13 @@ The pf template is `.tpl`, not `.template`, on purpose. Phase 1's
 
 | Machine | Phase 1 role | Phase 2 adds |
 |---|---|---|
-| Mac 1 | DNS (primary) + client | TTL 30 profile; it is the client for the Ext C, E and F demos |
+| Mac 1 | DNS (primary) + client | TTL 30 profile; it is the client for the Ext C, D and F demos |
 | Mac 2 | Edge (nginx) | `p2-health-watch` (read-only) |
-| Mac 3 | Backend A | **Backup DNS** (dnsmasq) + pf isolation on :3001 |
-| Mac 4 | Backend B + client | **Standby edge** (nginx) + pf isolation on :3002 |
+| Mac 3 | Backend A + client | pf isolation on :3001; the client for the Ext A and B + E demos (it is neither DNS server nor an edge) |
+| Mac 4 | Backend B + client | **Backup DNS** (dnsmasq) + **standby edge** (nginx) + pf isolation on :3002 |
+
+Mac 4 hosts three services on different ports (`:3002`, `:53`, `:80/:443`). The
+trade-off is shared fate, see [architecture.md](architecture.md#shared-fate-on-mac-4).
 
 ## Team roles (Phase 2)
 
@@ -56,6 +59,10 @@ To move a role, set `BACKUP_DNS_IP` or `STANDBY_EDGE_IP` in
 
 ## Setup (once, in this order)
 
+Phase 1 must already pass `make verify`. Starting from a **fresh clone**? Follow
+the combined Phase 1 → Phase 2 run order in
+[`docs/index.html` → Start here](../index.html#fresh), with one tab per Mac.
+
 ```bash
 # all Macs — pull the repo; .env from Phase 1 is reused as-is
 make p2-test                         # offline: syntax, rendering, Phase 1 untouched
@@ -63,18 +70,18 @@ make p2-test                         # offline: syntax, rendering, Phase 1 untou
 # Mac 1
 make p2-primary-dns                  # Ext B: TTL 0 -> 30, Phase 1 config backed up
 
-# Mac 3
-make p2-backup-dns                   # Ext A: second dnsmasq, same records
-make p2-isolate                      # Ext C: pf on :3001
-
 # Mac 4
+make p2-backup-dns                   # Ext A: second dnsmasq, same records
 scp …/infra/mac2-edge/certs/{app.paradise.test.crt,app.paradise.test.key,rootCA.pem} \
     <mac4>:<repo>/infra/phase2/certs/   # run on Mac 2
 make p2-standby-edge                 # Ext E: standby nginx (no client uses it yet)
 make p2-isolate                      # Ext C: pf on :3002
 
+# Mac 3
+make p2-isolate                      # Ext C: pf on :3001
+
 # clients (Mac 1, Mac 3, Mac 4)
-make p2-client-dns                   # resolvers = Mac 1, then Mac 3
+make p2-client-dns                   # resolvers = Mac 1, then Mac 4
 
 # any client — acceptance
 make p2-verify
@@ -84,11 +91,11 @@ make p2-verify
 
 | Ext | Where | Command | What to point at |
 |---|---|---|---|
-| A | client (Mac 4) | `make p2-demo-dns-failover` | it prompts you to run `make p2-dns-stop` on Mac 1, then `dig` shows `SERVER: <Mac 3>` while curl still returns 200 |
-| B | client | `make p2-ttl-watch` while Mac 1 runs `make p2-cutover TO=standby` | the **SERVER** column flips at once; **OS-CACHE** and **CURL→IP** stay on the old edge for up to 30 s; `make p2-flush` flips them immediately |
+| A | client (Mac 3) | `make p2-demo-dns-failover` | it prompts you to run `make p2-dns-stop` on Mac 1, then `dig` shows `SERVER: <Mac 4>` while curl still returns 200 |
+| B | client (Mac 3) | `make p2-ttl-watch` while Mac 1 and Mac 4 run `make p2-cutover TO=standby` | the **SERVER** column flips at once; **OS-CACHE** and **CURL→IP** stay on the old edge for up to 30 s; `make p2-flush` flips them immediately |
 | C | Mac 2, then Mac 1 | `make p2-isolation-test` | edge: OPEN; client: FILTERED (timeout, not refused); both still 200 through the edge |
 | D | Mac 2 + client | `make p2-health-watch` and `make p2-ha-demo` | Ctrl-C Backend A at about 10 s → B only with zero errors; `make backend-a` at about 35 s → A rejoins |
-| E | Mac 1 + Mac 3, client | `make p2-cutover TO=standby` on both DNS Macs, `make p2-ttl-watch` on the client | `X-Edge` changes from `nginx@<Mac 2>` to `nginx@<Mac 4>` once the TTL expires |
+| E | Mac 1 + Mac 4, client (Mac 3) | `make p2-cutover TO=standby` on both DNS Macs, `make p2-ttl-watch` on the client | `X-Edge` changes from `nginx@<Mac 2>` to `nginx@<Mac 4>` once the TTL expires |
 | F | client | `make p2-diagnose` | the first failing layer is the verdict |
 
 Cut back afterwards with `make p2-cutover TO=primary` on both DNS Macs.
@@ -122,7 +129,7 @@ machine, or pass `WHAT=` to revert one piece:
 | `WHAT=` | Machine | Effect |
 |---|---|---|
 | `primary-dns` | Mac 1 | re-runs the **Phase 1 installer** (TTL back to 0) |
-| `backup-dns` | Mac 3 | stops dnsmasq and restores its prior config |
+| `backup-dns` | Mac 4 | stops dnsmasq and restores its prior config |
 | `client-dns` | clients | restores the resolver list saved before Phase 2 |
 | `isolation` | Mac 3/4 | flushes the pf anchor and releases our pf token |
 | `standby-edge` | Mac 4 | stops nginx and restores its prior config |

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# [Mac 3 · backup DNS]  Extension A — a second, independent resolver.
+# [Mac 4 · backup DNS]  Extension A — a second, independent resolver.
 #
 # Same Phase 1 dnsmasq template, same records, rendered for this machine.
 # Independent on purpose: it does NOT forward .test queries to Mac 1, because a

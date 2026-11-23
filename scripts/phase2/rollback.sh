@@ -4,7 +4,7 @@
 #   ./rollback.sh                 # = all: everything that applies to this Mac
 #   ./rollback.sh primary-dns     # Mac 1     : re-install the Phase 1 dnsmasq config
 #   ./rollback.sh cutover         # DNS Macs  : records back to Mac 2 (stays Phase 2)
-#   ./rollback.sh backup-dns      # Mac 3     : stop backup dnsmasq, restore old config
+#   ./rollback.sh backup-dns      # Mac 4     : stop backup dnsmasq, restore old config
 #   ./rollback.sh client-dns      # clients   : resolver list back to pre-Phase-2
 #   ./rollback.sh isolation       # Mac 3 / 4 : flush pf anchor, release pf token
 #   ./rollback.sh standby-edge    # Mac 4     : stop standby nginx, restore old config

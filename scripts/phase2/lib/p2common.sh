@@ -58,9 +58,11 @@ load_p2_env() {
   fi
 
   # Phase 2 variables. Defaults follow the agreed placement:
-  #   backup DNS  -> Mac 3 (Backend A's machine)
+  #   backup DNS  -> Mac 4 (Backend B's machine)
   #   standby edge-> Mac 4 (Backend B's machine)
-  export BACKUP_DNS_IP="${BACKUP_DNS_IP:-$BACKEND_A_IP}"
+  # Both extras share Mac 4, so Mac 3 stays a plain backend + client — the
+  # cleanest vantage point for the Ext A/B/E client demos.
+  export BACKUP_DNS_IP="${BACKUP_DNS_IP:-$BACKEND_B_IP}"
   export STANDBY_EDGE_IP="${STANDBY_EDGE_IP:-$BACKEND_B_IP}"
   export P2_DNS_TTL="${P2_DNS_TTL:-30}"
   export HEALTH_INTERVAL="${HEALTH_INTERVAL:-2}"

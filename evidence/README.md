@@ -43,3 +43,9 @@ make evidence        # run from a CLIENT machine, not Mac 2
 
 `captures/*.pcapng` are gitignored — they are large and the form does not ask
 for the file, only your description. Keep them locally for the demo.
+
+## Phase 2 evidence
+
+Phase 2 output lives in [`phase2/`](phase2/README.md), one folder per extension
+(A–F), with a screenshot list, Wireshark capture and display filters, and the
+simulation steps for each. Phase 1 files above are not changed by Phase 2.

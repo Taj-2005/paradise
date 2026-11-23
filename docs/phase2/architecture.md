@@ -23,9 +23,9 @@ All four are also inlined in the Phase 2 section of [`docs/index.html`](../index
 
 | Area | Phase 1 | Phase 2 | Cloud equivalent |
 |---|---|---|---|
-| DNS servers | one (Mac 1) | two, independent (Mac 1 + Mac 3) | Route 53's four name servers per zone |
+| DNS servers | one (Mac 1) | two, independent (Mac 1 + Mac 4) | Route 53's four name servers per zone |
 | DNS TTL | 0 (no caching) | 30 s (caching observable) | record TTL chosen before a migration |
-| Client resolvers | Mac 1 | Mac 1, then Mac 3 | VPC resolver + fallback |
+| Client resolvers | Mac 1 | Mac 1, then Mac 4 | VPC resolver + fallback |
 | Backend reachability | anyone on the LAN | only the edges (pf `block drop`) | Security Group: inbound from the ALB SG only |
 | Backend failure | passive `max_fails` | unchanged, plus a live health view | ALB target health checks |
 | Edge | one (Mac 2) | primary + standby, chosen by DNS | multi-region ALB + Route 53 failover |
@@ -73,3 +73,15 @@ cached Mac 2 keep trying it for up to 30 s. To eliminate it, use one of:
 3. **An anycast or global load balancer** in front of both edges.
 
 Backend A and B are no longer SPOFs (Ext D), and DNS is not either (Ext A).
+
+## Shared fate on Mac 4
+
+Mac 4 runs Backend B, the backup DNS **and** the standby edge. They use different
+ports (`:3002`, `:53`, `:80/:443`), so they never clash. But they share one
+machine: if Mac 4 itself dies, all three go together. The primary path
+(Mac 1 DNS → Mac 2 edge → Backend A) still serves traffic, so no single machine
+failure takes the service down. However, a Mac 1 failure *and* a Mac 4 failure
+together would leave no DNS at all. A production design spreads the secondary
+name server and the standby edge across separate failure domains (different
+hosts, racks or availability zones). Here the placement keeps Mac 3 free of any
+Phase 2 server, which makes it a clean client for the Ext A, B and E demos.

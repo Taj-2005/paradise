@@ -199,6 +199,7 @@ footer{margin-top:4rem;border-top:1px solid var(--line);padding:2rem 0 3rem;colo
       <a href="#layers">Layers</a>
       <a href="#failures">Failures</a>
       <a href="#trouble">Troubleshooting</a>
+      <a href="#fresh"><strong>Start here</strong></a>
       <a href="#phase2"><strong>Phase 2</strong></a>
     </nav>
   </div>
@@ -375,7 +376,8 @@ machine to print the live inventory.</p></div>
 <section id="setup">
 <h2>Setup</h2>
 <p class="lede">Order matters: backends first, then the edge, then DNS, then point the clients.
-Pick your machine below.</p>
+Pick your machine below. Starting from a fresh clone and doing both phases? Follow
+<a href="#fresh">Start here</a> for the combined run order.</p>
 
 <div class="tabs" role="tablist">
   <button class="tab" role="tab" aria-selected="true"  data-p="p0">Step 0 · All machines</button>
@@ -802,6 +804,224 @@ kill &lt;pid&gt;</code></pre></div>
 
 <hr>
 
+<!-- ═══════════════════════ START HERE · FRESH CLONE ═══════════════════════ -->
+<section id="fresh">
+<h2>Start here — fresh clone, Phase 1 → Phase 2</h2>
+<p class="lede">Everyone cloned the repo again, so <code>.env</code>, the certificates and all
+generated configs are gone. Everything below is in run order. First, one table of
+<strong>who runs what, when</strong>. Then the tab for <strong>your</strong> Mac holds every
+command you type, top to bottom. Lines starting with <code># wait:</code> mean another Mac must
+finish a step first.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>#</th><th>Machine</th><th>Command</th><th>Done when</th></tr></thead>
+<tbody>
+<tr><td colspan="4"><strong>Phase 1 — rebuild the baseline</strong></td></tr>
+<tr><td>1</td><td>all four</td><td><code>git clone https://github.com/Taj-2005/paradise.git &amp;&amp; cd paradise</code></td><td>repo at <code>~/paradise</code></td></tr>
+<tr><td>2</td><td>one person</td><td><code>cp .env.example .env</code>, edit the four IPs, then <code>scp .env</code> to the other three</td><td>identical <code>.env</code> on all four</td></tr>
+<tr><td>3</td><td>all four</td><td><code>./scripts/render-configs.sh &amp;&amp; ./scripts/bootstrap.sh</code></td><td>bootstrap prints this Mac's role</td></tr>
+<tr><td>4</td><td>Mac 3 · Mac 4</td><td><code>make backend-a</code> · <code>make backend-b</code> <em>(terminal 1, leave running)</em></td><td><code>listening http://0.0.0.0:300x</code></td></tr>
+<tr><td>5</td><td>Mac 2</td><td><code>make edge</code>, then <code>scp rootCA.pem</code> to Mac 1, 3, 4</td><td><code>✓ End-to-end 200 through the proxy</code></td></tr>
+<tr><td>6</td><td>Mac 1</td><td><code>make dns</code></td><td><code>✓ api.paradise.test -&gt; … reachable from the LAN</code></td></tr>
+<tr><td>7</td><td>all four</td><td><code>make client-dns &amp;&amp; make client-trust</code></td><td><code>✓ Certificate verified with no -k flag</code></td></tr>
+<tr><td>8</td><td>Mac 1</td><td><code>make preflight &amp;&amp; make verify</code></td><td>all Phase 1 checks pass</td></tr>
+<tr><td colspan="4"><strong>Phase 2 — add the extensions</strong></td></tr>
+<tr><td>9</td><td>all four</td><td><code>make p2-test</code></td><td><code>53/53 checks passed</code></td></tr>
+<tr><td>10</td><td>Mac 1</td><td><code>make p2-primary-dns</code></td><td><code>✓ TTL in the answer = 30s</code></td></tr>
+<tr><td>11</td><td>Mac 4</td><td><code>make p2-backup-dns</code></td><td><code>✓ Primary and backup agree</code></td></tr>
+<tr><td>12</td><td>Mac 2</td><td><code>scp</code> the edge cert, key and CA into Mac 4's <code>infra/phase2/certs/</code></td><td>3 files on Mac 4</td></tr>
+<tr><td>13</td><td>Mac 4</td><td><code>make p2-standby-edge</code></td><td><code>✓ X-Edge: nginx@&lt;Mac 4&gt;</code></td></tr>
+<tr><td>14</td><td>Mac 1 · 3 · 4</td><td><code>make p2-client-dns</code></td><td>two <code>nameserver[…]</code> lines</td></tr>
+<tr><td>15</td><td>Mac 3 · Mac 4</td><td><code>make p2-isolate</code></td><td><code>✓ pf enabled (token … saved for rollback)</code></td></tr>
+<tr><td>16</td><td>Mac 2, then Mac 1</td><td><code>make p2-isolation-test</code></td><td>Mac 2: <strong>OPEN</strong> · Mac 1: <strong>FILTERED</strong></td></tr>
+<tr><td>17</td><td>Mac 1</td><td><code>make p2-verify &amp;&amp; make p2-evidence</code></td><td><code>✓ Phase 2 acceptance: all passed.</code></td></tr>
+</tbody></table></div>
+
+<div class="bad"><p><strong>Run Phase 1's <code>make verify</code> (step 8) before <code>make p2-isolate</code> (step 15).</strong>
+Phase 1's <code>preflight</code> and <code>verify</code> connect to <code>:3001</code>/<code>:3002</code>
+directly. Once Extension C is on, those connections time out from any Mac that is not an
+edge. That is Extension C working, not a broken Phase 1. Need a Phase 1 re-check later?
+Run <code>make p2-rollback WHAT=isolation</code> on Mac 3 and Mac 4 first.</p></div>
+
+<div class="tabs" role="tablist" data-store="cn2.fresh">
+  <button class="tab" role="tab" aria-selected="true"  data-p="f1">Mac 1 · DNS + client</button>
+  <button class="tab" role="tab" aria-selected="false" data-p="f2">Mac 2 · Edge</button>
+  <button class="tab" role="tab" aria-selected="false" data-p="f3">Mac 3 · Backend A + main client</button>
+  <button class="tab" role="tab" aria-selected="false" data-p="f4">Mac 4 · Backend B + backup DNS + standby edge</button>
+</div>
+
+<div class="panel on" id="f1">
+  <ol class="steps">
+    <li><strong>Phase 1</strong>
+      <div class="codewrap"><pre><code>git clone https://github.com/Taj-2005/paradise.git &amp;&amp; cd paradise
+cp .env.example .env &amp;&amp; $EDITOR .env    # only if YOU fill in .env, else wait for the scp
+./scripts/render-configs.sh
+./scripts/bootstrap.sh                   # installs dnsmasq
+
+# wait: Mac 3 + Mac 4 backends running, Mac 2 finished `make edge`
+make dns
+./infra/mac1-dns/verify.sh
+make client-dns                          # resolver = Mac 1 (itself)
+make client-trust                        # uses ~/rootCA.pem from Mac 2
+
+# wait: all four Macs ran client-dns + client-trust
+make preflight
+make verify                              # Phase 1 baseline (before Ext C!)</code></pre></div>
+    </li>
+    <li><strong>Phase 2</strong>
+      <div class="codewrap"><pre><code>make p2-test                             # offline, 53/53
+make p2-primary-dns                      # Ext B: TTL 0 -&gt; 30
+
+# wait: Mac 4 ran `make p2-backup-dns`
+make p2-client-dns                       # resolvers: Mac 1, then Mac 4
+
+# wait: Mac 3 + Mac 4 ran `make p2-isolate`
+make p2-isolation-test                   # want FILTERED (timeout) on both backends
+make p2-verify
+make p2-evidence                         # -&gt; evidence/phase2/</code></pre></div>
+    </li>
+    <li><strong>Demo day — Mac 1's part</strong>
+      <div class="codewrap"><pre><code>make p2-dns-stop                         # Ext A: when the Mac 3 demo prompts you
+make p2-dns-start
+make p2-cutover TO=standby               # Ext B+E: Mac 4 runs the same command
+make p2-cutover TO=primary               # cut back afterwards (Mac 4 too)
+make p2-ha-demo                          # Ext D client (Mac 2 runs p2-health-watch)
+make p2-diagnose                         # Ext F</code></pre></div>
+    </li>
+  </ol>
+</div>
+
+<div class="panel" id="f2">
+  <ol class="steps">
+    <li><strong>Phase 1</strong>
+      <div class="codewrap"><pre><code>git clone https://github.com/Taj-2005/paradise.git &amp;&amp; cd paradise
+# wait: .env arrives by scp (or create it: cp .env.example .env)
+./scripts/render-configs.sh
+./scripts/bootstrap.sh                   # installs nginx, mkcert, nss
+
+# wait: Mac 3 + Mac 4 backends running
+make edge                                # certs + nginx + self-test
+scp infra/mac2-edge/certs/rootCA.pem user@&lt;mac1&gt;:~/
+scp infra/mac2-edge/certs/rootCA.pem user@&lt;mac3&gt;:~/
+scp infra/mac2-edge/certs/rootCA.pem user@&lt;mac4&gt;:~/
+make client-dns
+make client-trust</code></pre></div>
+    </li>
+    <li><strong>Phase 2</strong>
+      <div class="codewrap"><pre><code>make p2-test
+
+# Ext E: give the standby edge the SAME certificate (Mac 4 must have cloned already)
+scp infra/mac2-edge/certs/app.paradise.test.crt \
+    infra/mac2-edge/certs/app.paradise.test.key \
+    infra/mac2-edge/certs/rootCA.pem \
+    user@&lt;mac4&gt;:~/paradise/infra/phase2/certs/
+
+# wait: Mac 3 + Mac 4 ran `make p2-isolate`
+make p2-isolation-test                   # want OPEN: the edge is allowed</code></pre></div>
+    </li>
+    <li><strong>Demo day — Mac 2's part</strong>
+      <div class="codewrap"><pre><code>make p2-health-watch                     # Ext D: leave it on screen, Ctrl-C to stop</code></pre></div>
+    </li>
+  </ol>
+  <div class="note"><p>Mac 2 keeps the Phase 1 resolver (Mac 1 only). It does not need
+  <code>make p2-client-dns</code>.</p></div>
+</div>
+
+<div class="panel" id="f3">
+  <ol class="steps">
+    <li><strong>Phase 1</strong>
+      <div class="codewrap"><pre><code>git clone https://github.com/Taj-2005/paradise.git &amp;&amp; cd paradise
+# wait: .env arrives by scp
+./scripts/render-configs.sh
+./scripts/bootstrap.sh                   # installs node
+
+# TERMINAL 1: leave it running for the whole session
+make backend-a
+
+# TERMINAL 2: everything else
+lsof -nP -iTCP:3001 -sTCP:LISTEN         # want *:3001, NOT 127.0.0.1:3001
+# wait: Mac 2 copied rootCA.pem to ~/, Mac 1 ran `make dns`
+make client-dns
+make client-trust</code></pre></div>
+    </li>
+    <li><strong>Phase 2</strong> <em>(terminal 2; Backend A keeps running in terminal 1)</em>
+      <div class="codewrap"><pre><code># wait: Mac 1's `make verify` passed
+make p2-test
+
+# wait: Mac 4 ran `make p2-backup-dns`
+make p2-client-dns                       # resolvers: Mac 1, then Mac 4
+make p2-isolate                          # Ext C: pf, only the edges reach :3001</code></pre></div>
+    </li>
+    <li><strong>Demo day — Mac 3's part</strong> <em>(the main client)</em>
+      <div class="codewrap"><pre><code>make p2-demo-dns-failover                # Ext A: prompts Mac 1 to run p2-dns-stop
+make p2-ttl-watch                        # Ext B+E: while Mac 1 + Mac 4 run p2-cutover
+make p2-flush                            # Ext B: drop the cached answer immediately
+
+# Ext D: Ctrl-C in terminal 1 at ~10 s (Backend A dies), then bring it back:
+make backend-a</code></pre></div>
+    </li>
+  </ol>
+</div>
+
+<div class="panel" id="f4">
+  <ol class="steps">
+    <li><strong>Phase 1</strong>
+      <div class="codewrap"><pre><code>git clone https://github.com/Taj-2005/paradise.git &amp;&amp; cd paradise
+# wait: .env arrives by scp
+./scripts/render-configs.sh
+./scripts/bootstrap.sh                   # installs node
+
+# TERMINAL 1: leave it running for the whole session
+make backend-b
+
+# TERMINAL 2: everything else
+lsof -nP -iTCP:3002 -sTCP:LISTEN         # want *:3002, NOT 127.0.0.1:3002
+# wait: Mac 2 copied rootCA.pem to ~/, Mac 1 ran `make dns`
+make client-dns
+make client-trust</code></pre></div>
+    </li>
+    <li><strong>Phase 2</strong> <em>(terminal 2; Backend B keeps running in terminal 1)</em>
+      <div class="codewrap"><pre><code># wait: Mac 1's `make verify` passed
+make p2-test
+make p2-backup-dns                       # Ext A: second dnsmasq (installs it if missing)
+
+# wait: Mac 2 copied the edge certificate here
+ls infra/phase2/certs/                   # app.paradise.test.crt  app.paradise.test.key  rootCA.pem
+make p2-standby-edge                     # Ext E: standby nginx (installs it if missing)
+
+make p2-client-dns                       # resolvers: Mac 1, then Mac 4 (itself)
+make p2-isolate                          # Ext C: pf, only the edges reach :3002</code></pre></div>
+    </li>
+    <li><strong>Demo day — Mac 4's part</strong>
+      <div class="codewrap"><pre><code>sudo tail -f /opt/homebrew/var/log/dnsmasq.log   # Ext A: backup queries arrive here
+make p2-cutover TO=standby               # Ext B+E: at the same time as Mac 1
+make p2-cutover TO=primary               # cut back afterwards (Mac 1 too)</code></pre></div>
+    </li>
+  </ol>
+  <div class="note"><p>Mac 4 is the standby edge, so it is in the pf allow-list.
+  The Ext C "blocked client" proof (<code>make p2-isolation-test</code> → FILTERED) must run from
+  <strong>Mac 1</strong>, not from here.</p></div>
+</div>
+
+<div class="warn"><p><strong>Don't delete a clone while Phase 2 is installed.</strong> The rollback
+state (pf token, pf snapshot, the resolver list saved before Phase 2, current edge target) lives in
+<code>infra/phase2/build/state/</code>, inside the clone. To re-clone, run <code>make p2-rollback</code>
+on that Mac first.</p></div>
+
+<div class="note"><p><strong>Same CA after re-cloning.</strong> mkcert keeps its root CA in
+<code>$(mkcert -CAROOT)</code>, outside the repo. A fresh <code>make edge</code> on Mac 2 therefore
+signs with the <em>same</em> CA, and <code>make client-trust</code> just reports "already trusted".
+If Mac 2's mkcert store was wiped, the CA is new. Then redo the CA <code>scp</code> and
+<code>make client-trust</code> on every Mac, and recopy the cert to Mac 4. The <code>scp</code> paths
+above assume the repo sits at <code>~/paradise</code>; change them if yours differs.</p></div>
+
+<p>The full demo scripts, with what to point at for each extension, are under
+<a href="#p2-demos">Phase 2 → Demonstrations</a>. The undo for every step is under
+<a href="#p2-setup">Phase 2 → Setup → Rollback</a> tab.</p>
+</section>
+
+<hr>
+
 <!-- ═══════════════════════════════ PHASE 2 ═══════════════════════════════ -->
 <section id="phase2">
 <h2>Phase 2 — Harden, Recover &amp; Troubleshoot</h2>
@@ -824,10 +1044,10 @@ an exact rollback. Run <code>make p2</code> for the full target list.</p>
     <p style="font-size:.85rem;color:var(--fg-2);margin-bottom:0">Phase 1 template re-rendered with <code>local-ttl=30</code>. Client for Ext C/E/F demos.</p></div>
   <div class="card edge"><div class="role">Mac 2</div><h4>Edge · health view</h4>
     <p style="font-size:.85rem;color:var(--fg-2);margin-bottom:0">Unchanged nginx. <code>make p2-health-watch</code> shows backend state live (read-only).</p></div>
-  <div class="card ba"><div class="role">Mac 3</div><h4>+ Backup DNS · pf</h4>
-    <p style="font-size:.85rem;color:var(--fg-2);margin-bottom:0">Second, independent dnsmasq. pf lets only the edges reach <code>:3001</code>. <em>≈ Security Group</em></p></div>
-  <div class="card bb"><div class="role">Mac 4</div><h4>+ Standby edge · pf</h4>
-    <p style="font-size:.85rem;color:var(--fg-2);margin-bottom:0">Same nginx config, <code>X-Edge: nginx@Mac4</code>. pf on <code>:3002</code>. Also a client.</p></div>
+  <div class="card ba"><div class="role">Mac 3</div><h4>+ pf · main client</h4>
+    <p style="font-size:.85rem;color:var(--fg-2);margin-bottom:0">pf lets only the edges reach <code>:3001</code>. <em>≈ Security Group</em>. Neither DNS nor edge, so it is the client for the Ext A / B / E demos.</p></div>
+  <div class="card bb"><div class="role">Mac 4</div><h4>+ Backup DNS · standby edge · pf</h4>
+    <p style="font-size:.85rem;color:var(--fg-2);margin-bottom:0">Second, independent dnsmasq. Same nginx config, <code>X-Edge: nginx@Mac4</code>. pf on <code>:3002</code>.</p></div>
 </div>
 
 <!-- DIAGRAM:p2-topology -->
@@ -848,11 +1068,11 @@ flowchart TB
   subgraph LAN[&quot;Private LAN &amp;mdash; same four Macs as Phase 1, no new hardware&quot;]
     direction TB
 
-    C[&quot;&lt;b&gt;Clients&lt;/b&gt;&lt;br/&gt;Mac 1 &amp;middot; Mac 3 &amp;middot; Mac 4&lt;br/&gt;resolvers: Mac 1, then Mac 3&quot;]
+    C[&quot;&lt;b&gt;Clients&lt;/b&gt;&lt;br/&gt;Mac 1 &amp;middot; Mac 3 &amp;middot; Mac 4&lt;br/&gt;resolvers: Mac 1, then Mac 4&quot;]
 
     DNS1[&quot;&lt;b&gt;Mac 1 &amp;middot; Primary DNS&lt;/b&gt;&lt;br/&gt;dnsmasq &amp;middot; UDP/TCP 53&lt;br/&gt;TTL 0 &amp;rarr; &lt;b&gt;30 s&lt;/b&gt; (Ext B)&quot;]
 
-    DNS2[&quot;&lt;b&gt;Mac 3 &amp;middot; Backup DNS&lt;/b&gt; (Ext A)&lt;br/&gt;dnsmasq &amp;middot; same records&lt;br/&gt;independent &amp;mdash; never forwards to Mac 1&quot;]
+    DNS2[&quot;&lt;b&gt;Mac 4 &amp;middot; Backup DNS&lt;/b&gt; (Ext A)&lt;br/&gt;dnsmasq &amp;middot; same records&lt;br/&gt;independent &amp;mdash; never forwards to Mac 1&quot;]
 
     EDGE[&quot;&lt;b&gt;Mac 2 &amp;middot; Primary edge&lt;/b&gt;&lt;br/&gt;nginx &amp;middot; TLS &amp;middot; round robin&lt;br/&gt;X-Edge: nginx@Mac2&quot;]
 
@@ -907,14 +1127,16 @@ flowchart TB
 </figure>
 <!-- /DIAGRAM:p2-topology -->
 
-<h3>Setup</h3>
-<p class="lede">Order: Mac 1 → Mac 3 → Mac 4 → clients. Pick your machine below.</p>
+<h3 id="p2-setup">Setup</h3>
+<p class="lede">Order: Mac 1 → Mac 4 → Mac 3 → clients. Pick your machine below.
+Phase 1 must already pass <code>make verify</code>. From a fresh clone, use
+<a href="#fresh">Start here</a> instead.</p>
 
 <div class="tabs" role="tablist" data-store="cn2.tab">
   <button class="tab" role="tab" aria-selected="true"  data-p="q0">Step 0 · All machines</button>
   <button class="tab" role="tab" aria-selected="false" data-p="q1">Mac 1 · Primary DNS</button>
-  <button class="tab" role="tab" aria-selected="false" data-p="q3">Mac 3 · Backup DNS + pf</button>
-  <button class="tab" role="tab" aria-selected="false" data-p="q4">Mac 4 · Standby edge + pf</button>
+  <button class="tab" role="tab" aria-selected="false" data-p="q4">Mac 4 · Backup DNS + standby edge + pf</button>
+  <button class="tab" role="tab" aria-selected="false" data-p="q3">Mac 3 · pf</button>
   <button class="tab" role="tab" aria-selected="false" data-p="q2">Mac 2 · Edge</button>
   <button class="tab" role="tab" aria-selected="false" data-p="qc">Clients</button>
   <button class="tab" role="tab" aria-selected="false" data-p="qr">Rollback</button>
@@ -922,13 +1144,15 @@ flowchart TB
 
 <div class="panel on" id="q0">
   <ol class="steps">
-    <li><strong>Pull the Phase 2 code on all four machines</strong>
-      <p>The Phase 1 <code>.env</code> is reused as-is — no new IPs to fill in.</p>
-      <div class="codewrap"><pre><code>git pull
-make p2</code></pre></div>
+    <li><strong>Have the Phase 2 code and the Phase 1 <code>.env</code> on all four machines</strong>
+      <p>Phase 2 reuses the Phase 1 <code>.env</code> as-is, with no new IPs to fill in. An existing
+      clone only needs <code>git pull</code>. A fresh clone needs the whole Phase 1 setup first:
+      see <a href="#fresh">Start here</a>.</p>
+      <div class="codewrap"><pre><code>git pull          # existing clone only
+make p2           # list every Phase 2 target</code></pre></div>
     </li>
     <li><strong>Optional: move a Phase 2 role</strong>
-      <p>Defaults: backup DNS = Mac 3, standby edge = Mac 4, TTL = 30 s. Only create
+      <p>Defaults: backup DNS = Mac 4, standby edge = Mac 4, TTL = 30 s. Only create
       this file to change one of them.</p>
       <div class="codewrap"><pre><code>cp infra/phase2/.env.phase2.example infra/phase2/.env.phase2
 $EDITOR infra/phase2/.env.phase2      # BACKUP_DNS_IP, STANDBY_EDGE_IP, P2_DNS_TTL</code></pre></div>
@@ -943,8 +1167,8 @@ make p2-test</code></pre></div>
 ✓ standby edge: X-Edge identifies 10.0.0.13
 ✓ pf A: allows both edges on :3001
 ✓ pf: allow rule precedes block rule (order matters with quick)
-✓ no Phase 1 changes under infra/ services/ scripts/
-──────── 49/49 checks passed ────────</div>
+✓ no Phase 1 CODE changes under infra/ services/ scripts/ (phase2/ and *.md docs excluded)
+──────── 53/53 checks passed ────────</div>
     </li>
   </ol>
   <div class="warn"><p><strong>Why the pf template is <code>.tpl</code>, not <code>.template</code>.</strong>
@@ -967,12 +1191,12 @@ make p2-test</code></pre></div>
     </li>
     <li><strong>Failover demo controls (Extension A)</strong>
       <p>The client-side demo tells you when to run each one.</p>
-      <div class="codewrap"><pre><code>make p2-dns-stop      # primary down — clients fall through to Mac 3
+      <div class="codewrap"><pre><code>make p2-dns-stop      # primary down — clients fall through to Mac 4
 make p2-dns-start     # primary back</code></pre></div>
     </li>
     <li><strong>DNS cutover (Extensions B + E)</strong>
       <p>Points <code>app</code>/<code>api</code> at another edge. Run the <strong>same command
-      on Mac 3</strong> too — the backup serves its own copy of the records.</p>
+      on Mac 4</strong> too — the backup serves its own copy of the records.</p>
       <div class="codewrap"><pre><code>make p2-cutover TO=standby     # -> Mac 4
 make p2-cutover TO=primary     # -> Mac 2 (cut back)</code></pre></div>
       <div class="expect"><b>Expected</b>→ old: 10.0.0.11  (primary edge (Mac 2))
@@ -985,18 +1209,6 @@ make p2-cutover TO=primary     # -> Mac 2 (cut back)</code></pre></div>
 
 <div class="panel" id="q3">
   <ol class="steps">
-    <li><strong>Extension A — install the backup DNS</strong>
-      <p>Same Phase 1 template, rendered for this Mac. It does <strong>not</strong> forward
-      <code>.test</code> to Mac 1 — a backup that depends on the primary dies with it.</p>
-      <div class="codewrap"><pre><code>make p2-backup-dns</code></pre></div>
-      <div class="expect"><b>Expected</b>✓ Port 53 is available
-✓ Config syntax OK
-✓ dnsmasq listening on UDP/53
-✓ app.paradise.test -> 10.0.0.11 (via 127.0.0.1)
-✓ api.paradise.test -> 10.0.0.11 (via 10.0.0.12 — reachable from the LAN)
-✓ TTL = 30s
-✓ Primary and backup agree: app.paradise.test -> 10.0.0.11</div>
-    </li>
     <li><strong>Extension C — only the edges may reach :3001</strong>
       <p>Snapshots pf state, parse-checks the rules, loads them into the anchor
       <code>com.apple/250.ParadiseIsolation</code> — <code>/etc/pf.conf</code> is never edited.</p>
@@ -1014,16 +1226,27 @@ make p2-cutover TO=primary     # -> Mac 2 (cut back)</code></pre></div>
       "nothing listening". Phase 1's wrong-port demo shows refused; this shows a timeout, so
       the two failures are distinguishable on screen and in Wireshark.</p></div>
     </li>
-    <li><strong>Watch backup queries arrive</strong>
-      <div class="codewrap"><pre><code>sudo tail -f /opt/homebrew/var/log/dnsmasq.log</code></pre></div>
-    </li>
   </ol>
   <div class="note"><p>Backend A keeps running exactly as in Phase 1 (<code>make backend-a</code>).
-  Extension D stops only the Node process — the backup DNS on this Mac keeps answering.</p></div>
+  Mac 3 runs no Phase 2 server. That makes it the cleanest <strong>client</strong> for the Ext A and
+  Ext B + E demos, because it is neither DNS server nor an edge. Run
+  <a href="#" data-goto="qc">the client steps</a> here too.</p></div>
 </div>
 
 <div class="panel" id="q4">
   <ol class="steps">
+    <li><strong>Extension A — install the backup DNS</strong>
+      <p>Same Phase 1 template, rendered for this Mac. It does <strong>not</strong> forward
+      <code>.test</code> to Mac 1 — a backup that depends on the primary dies with it.</p>
+      <div class="codewrap"><pre><code>make p2-backup-dns</code></pre></div>
+      <div class="expect"><b>Expected</b>✓ Port 53 is available
+✓ Config syntax OK
+✓ dnsmasq listening on UDP/53
+✓ app.paradise.test -> 10.0.0.11 (via 127.0.0.1)
+✓ api.paradise.test -> 10.0.0.11 (via 10.0.0.13 — reachable from the LAN)
+✓ TTL = 30s
+✓ Primary and backup agree: app.paradise.test -> 10.0.0.11</div>
+    </li>
     <li><strong>Copy the edge certificate from Mac 2</strong>
       <p>Same certificate, same CA — clients connect by name and already trust it.
       <code>infra/phase2/certs/</code> is gitignored. Run <strong>on Mac 2</strong>:</p>
@@ -1045,9 +1268,14 @@ make p2-cutover TO=primary     # -> Mac 2 (cut back)</code></pre></div>
     <li><strong>Extension C — isolate Backend B</strong>
       <div class="codewrap"><pre><code>make p2-isolate</code></pre></div>
     </li>
+    <li><strong>Watch backup queries arrive</strong>
+      <div class="codewrap"><pre><code>sudo tail -f /opt/homebrew/var/log/dnsmasq.log</code></pre></div>
+    </li>
   </ol>
-  <div class="note"><p>Mac 4 is also a client — run <a href="#" data-goto="qc">the client steps</a>
-  here too. It is an edge in the allow-list, so do the Ext C "blocked client" proof from
+  <div class="note"><p><strong>Mac 4 now carries three roles:</strong> Backend B, the backup DNS and
+  the standby edge. They use different ports (<code>:3002</code>, <code>:53</code>,
+  <code>:80/:443</code>), so nothing clashes. Mac 4 is also a client, so run
+  <a href="#" data-goto="qc">the client steps</a> here too. It is an edge in the allow-list, so do the Ext C "blocked client" proof from
   <strong>Mac 1</strong>.</p></div>
 </div>
 
@@ -1081,9 +1309,9 @@ make p2-cutover TO=primary     # -> Mac 2 (cut back)</code></pre></div>
     <li><strong>List both resolvers, primary first</strong>
       <div class="codewrap"><pre><code>make p2-client-dns</code></pre></div>
       <div class="expect"><b>Expected</b>    nameserver[0] : 10.0.0.10
-    nameserver[1] : 10.0.0.12
+    nameserver[1] : 10.0.0.13
 ✓ @10.0.0.10  app.paradise.test -> 10.0.0.11
-✓ @10.0.0.12  app.paradise.test -> 10.0.0.11</div>
+✓ @10.0.0.13  app.paradise.test -> 10.0.0.11</div>
       <p>It keeps its own undo file, separate from Phase 1's — so Phase 2 rollback returns
       to the Phase 1 setting, and Phase 1's <code>reset-dns.sh</code> still returns to the
       original.</p>
@@ -1108,7 +1336,7 @@ E · Standby edge           ✓ standby identifies itself (X-Edge nginx@10.0.0.1
   or on a Mac where that piece was never installed.</p>
   <div class="codewrap"><pre><code>make p2-rollback                      # everything on THIS machine (asks first)
 make p2-rollback WHAT=primary-dns     # Mac 1   — re-runs the Phase 1 installer (TTL 0)
-make p2-rollback WHAT=backup-dns      # Mac 3   — stop dnsmasq, restore its config
+make p2-rollback WHAT=backup-dns      # Mac 4   — stop dnsmasq, restore its config
 make p2-rollback WHAT=isolation       # Mac 3/4 — flush pf anchor, release our token
 make p2-rollback WHAT=standby-edge    # Mac 4   — stop nginx, restore its config
 make p2-rollback WHAT=client-dns      # clients — resolvers back to the Phase 1 setting
@@ -1119,17 +1347,17 @@ make p2-rollback WHAT=faults          # any     — undo practice faults</code><
   ours. If pf was already enabled for Internet Sharing or a VPN, it stays enabled.</p></div>
 </div>
 
-<h3>Demonstrations</h3>
+<h3 id="p2-demos">Demonstrations</h3>
 <p class="lede">Spec §8 step 9 and Extensions A–F. Each demo writes its output to
 <code>evidence/phase2/</code> as it runs.</p>
 
-<h4>A · Backup DNS failover <span class="pill">client: Mac 4</span></h4>
+<h4>A · Backup DNS failover <span class="pill">client: Mac 3</span></h4>
 <div class="codewrap"><pre><code>make p2-demo-dns-failover</code></pre></div>
 <div class="expect"><b>Shows</b>$ dig app.paradise.test | grep SERVER
 ;; SERVER: 10.0.0.10#53(10.0.0.10)                  ← primary
 ▶ On Mac 1 (10.0.0.10) run:  make p2-dns-stop
 ;; communications error to 10.0.0.10#53: connection refused
-;; SERVER: 10.0.0.12#53(10.0.0.12)                  ← fell through to the backup
+;; SERVER: 10.0.0.13#53(10.0.0.13)                  ← fell through to the backup
 HTTP 200 via 10.0.0.11  (name resolved by the backup)</div>
 <!-- DIAGRAM:p2-dns-failover -->
 <figure>
@@ -1146,12 +1374,12 @@ title: CN Phase 2 — Ext A · Backup DNS failover
 ---
 sequenceDiagram
   autonumber
-  participant C as Client&lt;br/&gt;Mac 4
+  participant C as Client&lt;br/&gt;Mac 3
   participant P as Primary DNS&lt;br/&gt;Mac 1 · dnsmasq
-  participant B as Backup DNS&lt;br/&gt;Mac 3 · dnsmasq
+  participant B as Backup DNS&lt;br/&gt;Mac 4 · dnsmasq
   participant E as Edge&lt;br/&gt;Mac 2 · nginx
 
-  Note over C,E: Client resolver list (networksetup): Mac 1, then Mac 3
+  Note over C,E: Client resolver list (networksetup): Mac 1, then Mac 4
 
   rect rgba(124, 58, 237, 0.10)
     Note over C,B: NORMAL — the first resolver answers
@@ -1167,7 +1395,7 @@ sequenceDiagram
     C -&gt;&gt; P: Standard query A  app.paradise.test
     P --&gt;&gt; C: ICMP port unreachable&lt;br/&gt;dig: &quot;communications error … connection refused&quot;
     C -&gt;&gt; B: Same query → next resolver in the list
-    B --&gt;&gt; C: A → Mac 2, TTL 30&lt;br/&gt;dig reports SERVER = Mac 3
+    B --&gt;&gt; C: A → Mac 2, TTL 30&lt;br/&gt;dig reports SERVER = Mac 4
   end
 
   rect rgba(37, 99, 235, 0.10)
@@ -1186,9 +1414,9 @@ resolve host", yet <code>ping</code> to the edge IP works. Application down → 
 works, TCP + TLS to the edge work, nginx returns <strong>502</strong>. The first failing layer is
 different, so the fix is different.</p></div>
 
-<h4>B + E · TTL and DNS-based edge cutover <span class="pill">client + Mac 1 + Mac 3</span></h4>
+<h4>B + E · TTL and DNS-based edge cutover <span class="pill">client (Mac 3) + Mac 1 + Mac 4</span></h4>
 <div class="codewrap"><pre><code>make p2-ttl-watch                  # client — leave running
-make p2-cutover TO=standby         # Mac 1, then Mac 3
+make p2-cutover TO=standby         # Mac 1, then Mac 4
 make p2-flush                      # client — optional: skip the wait</code></pre></div>
 <div class="expect"><b>Shows</b>TIME      SERVER(dig)      TTL   OS-CACHE         CURL→IP          CODE X-EDGE
 14:02:09  10.0.0.11        30    10.0.0.11        10.0.0.11        200  nginx@10.0.0.11
@@ -1217,7 +1445,7 @@ sequenceDiagram
   autonumber
   participant C as curl / browser&lt;br/&gt;client
   participant O as OS resolver cache&lt;br/&gt;mDNSResponder
-  participant D as DNS&lt;br/&gt;Mac 1 + Mac 3
+  participant D as DNS&lt;br/&gt;Mac 1 + Mac 4
   participant E1 as Primary edge&lt;br/&gt;Mac 2 · nginx
   participant E2 as Standby edge&lt;br/&gt;Mac 4 · nginx
 
@@ -1231,7 +1459,7 @@ sequenceDiagram
     E1 --&gt;&gt; C: 200 · X-Edge: nginx@Mac2
   end
 
-  Note over D: t ≈ 5 s — make p2-cutover TO=standby&lt;br/&gt;(run on Mac 1 AND Mac 3)
+  Note over D: t ≈ 5 s — make p2-cutover TO=standby&lt;br/&gt;(run on Mac 1 AND Mac 4)
 
   rect rgba(202, 138, 4, 0.12)
     Note over C,E2: STALE WINDOW — up to 30 s
@@ -1377,7 +1605,7 @@ make p2-fault-undo F=edge-down     # on Mac 2</code></pre></div>
 <div class="progress"><div class="bar"><i id="p2bar"></i></div><span class="pct" id="p2pct">0 / 0</span>
   <button class="reset" id="p2reset">reset</button></div>
 <ul class="check" id="p2checklist">
-  <li><label><input type="checkbox" data-k="a1"><span class="t">Backup DNS on Mac 3 answers the same records as Mac 1
+  <li><label><input type="checkbox" data-k="a1"><span class="t">Backup DNS on Mac 4 answers the same records as Mac 1
     <span class="h">make p2-verify → section A</span></span></label></li>
   <li><label><input type="checkbox" data-k="a2"><span class="t">Clients list both resolvers, primary first
     <span class="h">make p2-client-dns · scutil --dns</span></span></label></li>
@@ -1420,12 +1648,12 @@ make p2-fault-undo F=edge-down     # on Mac 2</code></pre></div>
 <tr><td><code>make p2-render</code></td><td>any</td><td>Render Phase 2 profiles into <code>infra/phase2/build/</code></td></tr>
 <tr><td><code>make p2-primary-dns</code></td><td>Mac 1</td><td>Ext B — primary dnsmasq with TTL 30</td></tr>
 <tr><td><code>make p2-dns-stop</code> / <code>-start</code></td><td>Mac 1</td><td>Ext A — take the primary down / up</td></tr>
-<tr><td><code>make p2-backup-dns</code></td><td>Mac 3</td><td>Ext A — install + start the backup dnsmasq</td></tr>
-<tr><td><code>make p2-client-dns</code></td><td>clients</td><td>Ext A — resolvers = Mac 1, then Mac 3</td></tr>
+<tr><td><code>make p2-backup-dns</code></td><td>Mac 4</td><td>Ext A — install + start the backup dnsmasq</td></tr>
+<tr><td><code>make p2-client-dns</code></td><td>clients</td><td>Ext A — resolvers = Mac 1, then Mac 4</td></tr>
 <tr><td><code>make p2-demo-dns-failover</code></td><td>client</td><td>Ext A — guided failover demo</td></tr>
 <tr><td><code>make p2-ttl-watch</code></td><td>client</td><td>Ext B/E — dig vs OS cache vs curl, every 2 s</td></tr>
 <tr><td><code>make p2-flush</code></td><td>client</td><td>Ext B — flush the macOS DNS cache</td></tr>
-<tr><td><code>make p2-cutover TO=standby|primary</code></td><td>Mac 1 + 3</td><td>Ext B/E — repoint the A records</td></tr>
+<tr><td><code>make p2-cutover TO=standby|primary</code></td><td>Mac 1 + 4</td><td>Ext B/E — repoint the A records</td></tr>
 <tr><td><code>make p2-isolate</code></td><td>Mac 3, 4</td><td>Ext C — pf: only the edges reach the backend port</td></tr>
 <tr><td><code>make p2-isolation-test</code></td><td>any</td><td>Ext C — probe backend ports directly: OPEN / FILTERED / CLOSED</td></tr>
 <tr><td><code>make p2-health-watch</code></td><td>Mac 2</td><td>Ext D — live backend health (read-only)</td></tr>

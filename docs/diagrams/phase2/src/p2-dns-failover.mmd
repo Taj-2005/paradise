@@ -3,12 +3,12 @@ title: CN Phase 2 — Ext A · Backup DNS failover
 ---
 sequenceDiagram
   autonumber
-  participant C as Client<br/>Mac 4
+  participant C as Client<br/>Mac 3
   participant P as Primary DNS<br/>Mac 1 · dnsmasq
-  participant B as Backup DNS<br/>Mac 3 · dnsmasq
+  participant B as Backup DNS<br/>Mac 4 · dnsmasq
   participant E as Edge<br/>Mac 2 · nginx
 
-  Note over C,E: Client resolver list (networksetup): Mac 1, then Mac 3
+  Note over C,E: Client resolver list (networksetup): Mac 1, then Mac 4
 
   rect rgba(124, 58, 237, 0.10)
     Note over C,B: NORMAL — the first resolver answers
@@ -24,7 +24,7 @@ sequenceDiagram
     C ->> P: Standard query A  app.paradise.test
     P -->> C: ICMP port unreachable<br/>dig: "communications error … connection refused"
     C ->> B: Same query → next resolver in the list
-    B -->> C: A → Mac 2, TTL 30<br/>dig reports SERVER = Mac 3
+    B -->> C: A → Mac 2, TTL 30<br/>dig reports SERVER = Mac 4
   end
 
   rect rgba(37, 99, 235, 0.10)

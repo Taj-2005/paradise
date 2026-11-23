@@ -8,7 +8,7 @@
 ## 1. What changed from Phase 1
 
 See [architecture.md](architecture.md) for the full table. In short: a second
-independent DNS resolver (Mac 3), TTL 0 → 30 s, client resolver lists with two
+independent DNS resolver (Mac 4), TTL 0 → 30 s, client resolver lists with two
 entries, pf isolation of the backend ports, a live health view on the edge, and
 a standby nginx edge on Mac 4 reached by DNS cutover. Every Phase 1 template is
 reused unchanged. Phase 2 renders them with overrides.
@@ -17,7 +17,7 @@ reused unchanged. Phase 2 renders them with overrides.
 
 | # | Test | Command | Expected | Observed | Evidence |
 |---|---|---|---|---|---|
-| A | Primary DNS stopped | `make p2-demo-dns-failover` | `dig` falls through to Mac 3, curl 200 | <<< >>> | `A-backup-dns/A-failover-demo.txt` |
+| A | Primary DNS stopped | `make p2-demo-dns-failover` | `dig` falls through to Mac 4, curl 200 | <<< >>> | `A-backup-dns/A-failover-demo.txt` |
 | B | Record change, TTL 30 | `make p2-ttl-watch` + `p2-cutover` | dig flips now, OS cache after ≤30 s | <<< seconds stale >>> | `B-ttl/ttl-watch-*.txt` |
 | B | Manual flush | `make p2-flush` | immediate flip | <<< >>> | same |
 | C | Client → :3001 directly | `make p2-isolation-test` on Mac 1 | timeout (FILTERED) | <<< >>> | `C-isolation/C-probe-from-*.txt` |

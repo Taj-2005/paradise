@@ -10,7 +10,7 @@ F  ?= list
 WHAT ?= all
 SECS ?=
 
-.PHONY: p2 p2-render p2-test p2-verify p2-status p2-evidence \
+.PHONY: p2 p2-render p2-test p2-verify p2-status p2-evidence p2-capture \
         p2-primary-dns p2-backup-dns p2-client-dns p2-dns-stop p2-dns-start p2-demo-dns-failover \
         p2-ttl-watch p2-flush p2-cutover \
         p2-isolate p2-isolation-test \
@@ -42,7 +42,7 @@ p2-diagrams: ## [any]      Re-render docs/diagrams/phase2/*.mmd and refresh inde
 	@$(P2)/inline-diagrams.sh
 
 # ── Extension A — backup DNS ──────────────────────────────────────────────────
-p2-backup-dns: ## [Mac 3]    Ext A: install + start the backup dnsmasq
+p2-backup-dns: ## [Mac 4]    Ext A: install + start the backup dnsmasq
 	@$(P2)/install-backup-dns.sh
 p2-client-dns: ## [clients]  Ext A: resolvers = Mac 1, then backup
 	@$(P2)/client-dns.sh
@@ -60,7 +60,7 @@ p2-ttl-watch: ## [client]   Ext B/E: watch dig vs OS cache vs curl every 2s (SEC
 	@$(P2)/ttl-watch.sh $(SECS)
 p2-flush: ## [client]   Ext B: flush the macOS DNS cache
 	@$(P2)/flush-dns.sh
-p2-cutover: ## [Mac 1+3]  Ext B/E: point records at TO=standby|primary
+p2-cutover: ## [Mac 1+4]  Ext B/E: point records at TO=standby|primary
 	@$(P2)/dns-cutover.sh $(TO)
 
 # ── Extension C — service isolation ───────────────────────────────────────────
@@ -92,3 +92,5 @@ p2-verify: ## [client]   Phase 2 acceptance test (non-destructive)
 	@$(P2)/verify-phase2.sh
 p2-evidence: ## [client]   Collect steady-state Phase 2 evidence -> evidence/phase2/
 	@$(P2)/collect-evidence.sh
+p2-capture: ## [any]      tcpdump helper: MODE=dns|isolation|ha|cutover -> evidence/captures/p2-*.pcapng
+	@$(P2)/capture-p2.sh $(MODE)

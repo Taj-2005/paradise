@@ -381,8 +381,8 @@ The Phase 2 section of the [setup guide](docs/index.html#phase2) has per-machine
 |---|---|---|---|
 | Mac 1 | Private DNS + client | TTL 0 → 30 s (Ext B) | Route 53 record TTL |
 | Mac 2 | Edge (nginx) | live backend health view (Ext D) | ALB target health |
-| Mac 3 | Backend A | **backup DNS** (Ext A) · pf on :3001 (Ext C) | secondary name server · Security Group |
-| Mac 4 | Backend B + client | **standby edge** (Ext E) · pf on :3002 (Ext C) | second ALB + DNS failover · Security Group |
+| Mac 3 | Backend A + client | pf on :3001 (Ext C) · main client for the Ext A / B / E demos | Security Group |
+| Mac 4 | Backend B + client | **backup DNS** (Ext A) · **standby edge** (Ext E) · pf on :3002 (Ext C) | secondary name server · second ALB + DNS failover · Security Group |
 
 ### Extensions, demos and diagrams
 
@@ -403,12 +403,12 @@ The Phase 2 section of the [setup guide](docs/index.html#phase2) has per-machine
 | `make p2-test` | any | Offline tests: syntax, rendering, parsers, Phase 1 untouched |
 | `make p2-primary-dns` | Mac 1 | Ext B: primary dnsmasq with TTL 30 |
 | `make p2-dns-stop` / `p2-dns-start` | Mac 1 | Ext A: take the primary down / up |
-| `make p2-backup-dns` | Mac 3 | Ext A: backup dnsmasq, same records |
-| `make p2-client-dns` | clients | Ext A: resolvers = Mac 1, then Mac 3 |
+| `make p2-backup-dns` | Mac 4 | Ext A: backup dnsmasq, same records |
+| `make p2-client-dns` | clients | Ext A: resolvers = Mac 1, then Mac 4 |
 | `make p2-isolate` | Mac 3, 4 | Ext C: pf, only the edges reach :3001/:3002 |
 | `make p2-standby-edge` | Mac 4 | Ext E: standby nginx, same config + cert |
 | `make p2-health-watch` | Mac 2 | Ext D: live backend health (read-only) |
-| `make p2-cutover TO=standby\|primary` | Mac 1 + 3 | Ext B/E: repoint the A records |
+| `make p2-cutover TO=standby\|primary` | Mac 1 + 4 | Ext B/E: repoint the A records |
 | `make p2-demo-dns-failover` | client | Ext A guided demo |
 | `make p2-ttl-watch` / `p2-flush` | client | Ext B/E: dig vs OS cache vs curl / flush cache |
 | `make p2-isolation-test` | any | Ext C: OPEN / FILTERED / CLOSED probe |

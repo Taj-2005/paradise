@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# [client — Mac 4 recommended]  Extension A — guided backup-DNS failover demo.
+# [client — Mac 3 recommended: it is neither DNS server]  Extension A — guided backup-DNS failover demo.
 #
 # Proves: (1) clients list two resolvers, (2) with the primary stopped they keep
 # resolving through the backup, (3) a DNS failure and an application failure

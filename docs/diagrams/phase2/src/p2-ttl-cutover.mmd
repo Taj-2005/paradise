@@ -5,7 +5,7 @@ sequenceDiagram
   autonumber
   participant C as curl / browser<br/>client
   participant O as OS resolver cache<br/>mDNSResponder
-  participant D as DNS<br/>Mac 1 + Mac 3
+  participant D as DNS<br/>Mac 1 + Mac 4
   participant E1 as Primary edge<br/>Mac 2 · nginx
   participant E2 as Standby edge<br/>Mac 4 · nginx
 
@@ -19,7 +19,7 @@ sequenceDiagram
     E1 -->> C: 200 · X-Edge: nginx@Mac2
   end
 
-  Note over D: t ≈ 5 s — make p2-cutover TO=standby<br/>(run on Mac 1 AND Mac 3)
+  Note over D: t ≈ 5 s — make p2-cutover TO=standby<br/>(run on Mac 1 AND Mac 4)
 
   rect rgba(202, 138, 4, 0.12)
     Note over C,E2: STALE WINDOW — up to 30 s

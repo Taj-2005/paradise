@@ -60,8 +60,8 @@ sudo cp /opt/homebrew/etc/dnsmasq.conf.orig /opt/homebrew/etc/dnsmasq.conf
 Phase 2 reuses this folder's `dnsmasq.conf.template` unchanged; nothing here was
 edited. It renders the template with overrides into `infra/phase2/build/`:
 
-- **Extension A — backup resolver:** the same template rendered for Mac 3
-  (`make p2-backup-dns` on Mac 3). Independent: it never forwards `.test` to
+- **Extension A — backup resolver:** the same template rendered for Mac 4
+  (`make p2-backup-dns` on Mac 4). Independent: it never forwards `.test` to
   Mac 1, so it survives Mac 1 failing. Clients list both (`make p2-client-dns`).
 - **Extension B — TTL:** `make p2-primary-dns` on this Mac installs the same
   template with `DNS_TTL=30` (`.env` is not edited). `make p2-cutover TO=standby`

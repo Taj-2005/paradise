@@ -6,11 +6,11 @@ flowchart TB
   subgraph LAN["Private LAN &mdash; same four Macs as Phase 1, no new hardware"]
     direction TB
 
-    C["<b>Clients</b><br/>Mac 1 &middot; Mac 3 &middot; Mac 4<br/>resolvers: Mac 1, then Mac 3"]
+    C["<b>Clients</b><br/>Mac 1 &middot; Mac 3 &middot; Mac 4<br/>resolvers: Mac 1, then Mac 4"]
 
     DNS1["<b>Mac 1 &middot; Primary DNS</b><br/>dnsmasq &middot; UDP/TCP 53<br/>TTL 0 &rarr; <b>30 s</b> (Ext B)"]
 
-    DNS2["<b>Mac 3 &middot; Backup DNS</b> (Ext A)<br/>dnsmasq &middot; same records<br/>independent &mdash; never forwards to Mac 1"]
+    DNS2["<b>Mac 4 &middot; Backup DNS</b> (Ext A)<br/>dnsmasq &middot; same records<br/>independent &mdash; never forwards to Mac 1"]
 
     EDGE["<b>Mac 2 &middot; Primary edge</b><br/>nginx &middot; TLS &middot; round robin<br/>X-Edge: nginx@Mac2"]
 
